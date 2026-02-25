@@ -1,0 +1,5 @@
+void main(void) {
+  int x;
+  x = 3 <= 5 && true;
+  x = x + 1 * 2 - 4 / 2;
+}
