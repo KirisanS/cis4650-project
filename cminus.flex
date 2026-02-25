@@ -47,9 +47,6 @@ import java_cup.runtime.*;
     }
 %}
 
-// Macro Declarations
-// These declarations are regular expressions that will be used latter
-// in the Lexical Rules Section.  
 LETTER = [a-zA-Z_]
 DIGIT = [0-9]
 ID = {LETTER}({LETTER}|{DIGIT})*
@@ -58,11 +55,6 @@ WHITESPACE  = [ \t\r\n]+
 COMMENT = "/*"([^*]|\*+[^*/])*\*+"/"
 
 %%
-// ------------------------Lexical Rules Section----------------------
-// This section contains regular expressions and actions, i.e. Java
-// code, that will be executed when the scanner matches the associated
-// regular expression.
-
 // reserved words
 "bool"      {return symbol(sym.BOOL);}
 "else"      {return symbol(sym.ELSE);}
