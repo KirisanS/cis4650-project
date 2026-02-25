@@ -25,4 +25,4 @@ java -cp .:java-cup-0.11b.jar main test.cm
 
 ## how to run scanner only
 
-java -cp .:java-cup-0.11b.jar scanner < test.cm
+java -cp .:java-cup-0.11b.jar scanner < scanner_tests/test_basic.cm
