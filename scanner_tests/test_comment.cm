@@ -1,0 +1,6 @@
+/* this is a comment */
+int x; /* another comment */
+/* multi
+   line
+   comment */
+void main(void) { }
