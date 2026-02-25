@@ -54,5 +54,4 @@ dkms.conf
 # debug information files
 *.dwo
 
-# ignore the Makefile in the root directory
-/Makefile
+makefiles/
