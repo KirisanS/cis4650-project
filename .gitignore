@@ -54,5 +54,8 @@ dkms.conf
 # debug information files
 *.dwo
 
-# added from us
+# generated files
 *.class
+Lexer.java
+parser.java
+sym.java
