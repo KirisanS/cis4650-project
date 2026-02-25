@@ -10,7 +10,7 @@ import java_cup.runtime.*;
 %class Lexer
 
 %eofval{
-  return null;
+  return symbol(sym.EOF);
 %eofval};
 
 // The current line number can be accessed with the variable yyline
@@ -28,29 +28,34 @@ import java_cup.runtime.*;
 // line, will be copied letter to letter into the lexer class source.
 // Here you declare member variables and functions that are used inside
 // scanner actions.  
-%{  
-    /* To create a new java_cup.runtime.Symbol with information about
-       the current token, the token will have no value in this
-       case. */
+%{ 
     private Symbol symbol(int type) {
         return new Symbol(type, yyline, yycolumn);
-   }
+    }
     
-    /* Also creates a new java_cup.runtime.Symbol with information
-       about the current token, but this object has a value. */
     private Symbol symbol(int type, Object value) {
         return new Symbol(type, yyline, yycolumn, value);
-   }
+    }
+
+    // error handling
+    private void lexicalError(String text) {
+        System.err.println(
+            "Lexical error at line " + (yyline + 1) +
+            ", column " + (yycolumn + 1) +
+            ": illegal character '" + text + "'"
+        );
+    }
 %}
 
 // Macro Declarations
 // These declarations are regular expressions that will be used latter
 // in the Lexical Rules Section.  
-LETTER      = [a-zA-Z_]
-DIGIT       = [0-9]
-ID          = {LETTER}({LETTER}|{DIGIT})*
-NUM         = {DIGIT}+
+LETTER = [a-zA-Z_]
+DIGIT = [0-9]
+ID = {LETTER}({LETTER}|{DIGIT})*
+NUM = {DIGIT}+
 WHITESPACE  = [ \t\r\n]+
+COMMENT = "/*"([^*]|\*+[^*/])*\*+"/"
 
 %%
 // ------------------------Lexical Rules Section----------------------
@@ -59,43 +64,48 @@ WHITESPACE  = [ \t\r\n]+
 // regular expression.
 
 // reserved words
-"bool"   {return symbol(sym.BOOL);}
-"else"   {return symbol(sym.ELSE);}
-"if"     {return symbol(sym.IF);}
-"int"    {return symbol(sym.INT);}
-"return" {return symbol(sym.RETURN);}
-"void"   {return symbol(sym.VOID);}
-"while"  {return symbol(sym.WHILE);}
-"true"   {return symbol(sym.TRUTH, true);}
-"false"  {return symbol(sym.TRUTH, false);}
+"bool"      {return symbol(sym.BOOL);}
+"else"      {return symbol(sym.ELSE);}
+"if"        {return symbol(sym.IF);}
+"int"       {return symbol(sym.INT);}
+"return"    {return symbol(sym.RETURN);}
+"void"      {return symbol(sym.VOID);}
+"while"     {return symbol(sym.WHILE);}
+"true"      {return symbol(sym.TRUTH, true);}
+"false"     {return symbol(sym.TRUTH, false);}
 
 // operators
-"<="     {return symbol(sym.LE);}
-">="     {return symbol(sym.GE);}
-"=="     {return symbol(sym.EQ);}
-"!="     {return symbol(sym.NE);}
-"||"     {return symbol(sym.OR);}
-"&&"     {return symbol(sym.AND);}
-"<"      {return symbol(sym.LT);}
-">"      {return symbol(sym.GT);}
-"+"      {return symbol(sym.PLUS);}
-"-"      {return symbol(sym.MINUS);}
-"*"      {return symbol(sym.TIMES);}
-"/"      {return symbol(sym.DIVIDE);}
-"~"      {return symbol(sym.NOT);}
-"="      {return symbol(sym.ASSIGN);}
-";"      {return symbol(sym.SEMI);}
-","      {return symbol(sym.COMMA);}
-"("      {return symbol(sym.LPAREN);}
-")"      {return symbol(sym.RPAREN);}
-"["      {return symbol(sym.LBRACKET);}
-"]"      {return symbol(sym.RBRACKET);}
-"{"      {return symbol(sym.LBRACE);}
-"}"      {return symbol(sym.RBRACE);}
+"<="        {return symbol(sym.LE);}
+">="        {return symbol(sym.GE);}
+"=="        {return symbol(sym.EQ);}
+"!="        {return symbol(sym.NE);}
+"||"        {return symbol(sym.OR);}
+"&&"        {return symbol(sym.AND);}
+"<"         {return symbol(sym.LT);}
+">"         {return symbol(sym.GT);}
+"+"         {return symbol(sym.PLUS);}
+"-"         {return symbol(sym.MINUS);}
+"*"         {return symbol(sym.TIMES);}
+
+// JFlex matches the longest possible rule
+// but it also prioritizes rule order for equal-length matches
+// so that's why comment rule  is above the single / rule
+{COMMENT}   {/* ignore comment */}
+
+"/"         {return symbol(sym.DIVIDE);}
+"~"         {return symbol(sym.NOT);}
+"="         {return symbol(sym.ASSIGN);}
+";"         {return symbol(sym.SEMI);}
+","         {return symbol(sym.COMMA);}
+"("         {return symbol(sym.LPAREN);}
+")"         {return symbol(sym.RPAREN);}
+"["         {return symbol(sym.LBRACKET);}
+"]"         {return symbol(sym.RBRACKET);}
+"{"         {return symbol(sym.LBRACE);}
+"}"         {return symbol(sym.RBRACE);}
 
 // misc
-{ID}    { return symbol(sym.ID, yytext()); }
-{NUM}   { return symbol(sym.NUM, Integer.parseInt(yytext())); }
-{WHITESPACE}      {/* skip whitespace */}   
-"/*"([^*]|\*+[^*/])*\*+"/"   {/* ignore comment */}
-.                  {return symbol(sym.ERROR);}
+{ID}        {return symbol(sym.ID, yytext());}
+{NUM}       {return symbol(sym.NUM, Integer.parseInt(yytext()));}
+{WHITESPACE} {/* skip whitespace */}   
+.           {lexicalError(yytext());}
