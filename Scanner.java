@@ -16,12 +16,14 @@ public class Scanner {
     try {
       Scanner scanner = new Scanner(new Lexer(new InputStreamReader(System.in)));
       Symbol tok = null;
-      while( (tok=scanner.getNextToken()) != null ) {
-        System.out.print(tok.sym);
-        if (tok.value != null)
-           System.out.print("(" + tok.value + ")");
-        System.out.println();
-      }
+        while ((tok = scanner.getNextToken()) != null) {
+            if (tok.sym == sym.EOF) break;
+
+            System.out.print(sym.terminalNames[tok.sym]);
+            if (tok.value != null)
+                System.out.print("(" + tok.value + ")");
+            System.out.println();
+        }
     }
     catch (Exception e) {
       System.out.println("Unexpected exception:");

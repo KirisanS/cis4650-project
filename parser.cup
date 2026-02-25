@@ -1,0 +1,19 @@
+import java_cup.runtime.*;
+
+parser code {:
+:};
+
+terminal BOOL, ELSE, IF, INT, RETURN, VOID, WHILE, TRUTH;
+terminal LE, GE, EQ, NE, OR, AND, LT, GT;
+terminal PLUS, MINUS, TIMES, DIVIDE, NOT;
+terminal ASSIGN, SEMI, COMMA;
+terminal LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE;
+terminal ID, NUM;
+
+non terminal program;
+
+start with program;
+
+program ::= 
+    /* empty */
+    ;
