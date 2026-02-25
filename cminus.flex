@@ -67,14 +67,14 @@ COMMENT = "/*"([^*]|\*+[^*/])*\*+"/"
 "false"     {return symbol(sym.TRUTH, false);}
 
 // operators
-"<="        {return symbol(sym.LE);}
-">="        {return symbol(sym.GE);}
+"<="        {return symbol(sym.LESSEQUAL);}
+">="        {return symbol(sym.GREATEQUAL);}
 "=="        {return symbol(sym.EQ);}
-"!="        {return symbol(sym.NE);}
+"!="        {return symbol(sym.NOTEQUAL);}
 "||"        {return symbol(sym.OR);}
 "&&"        {return symbol(sym.AND);}
-"<"         {return symbol(sym.LT);}
-">"         {return symbol(sym.GT);}
+"<"         {return symbol(sym.LESSTHAN);}
+">"         {return symbol(sym.GREATTHAN);}
 "+"         {return symbol(sym.PLUS);}
 "-"         {return symbol(sym.MINUS);}
 "*"         {return symbol(sym.TIMES);}
@@ -87,7 +87,7 @@ COMMENT = "/*"([^*]|\*+[^*/])*\*+"/"
 "/"         {return symbol(sym.DIVIDE);}
 "~"         {return symbol(sym.NOT);}
 "="         {return symbol(sym.ASSIGN);}
-";"         {return symbol(sym.SEMI);}
+";"         {return symbol(sym.SEMICOLON);}
 ","         {return symbol(sym.COMMA);}
 "("         {return symbol(sym.LPAREN);}
 ")"         {return symbol(sym.RPAREN);}
