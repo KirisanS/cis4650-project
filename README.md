@@ -21,7 +21,7 @@ make
 
 ## how to "run" parser
 
-java -cp .:java-cup-0.11b.jar main test.cm
+java -cp .:java-cup-0.11b.jar main parser_tests/test_basic.cm
 
 ## how to run scanner only
 
