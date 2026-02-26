@@ -3,15 +3,6 @@ import java_cup.runtime.*;
 parser code {:
 :};
 
-/* Precedence (Lower has higher precedence) */ 
-precedence right ASSIGN;
-precedence left OR; 
-precedence left AND;
-precedence nonassoc LESSTHAN GREATTHAN LESSEQUAL GREATEQUAL EQ NOTEQUAL;
-precedence left PLUS MINUS; 
-precedence left TIMES DIVIDE; 
-precedence right NOT;
-precedence right UMINUS;
 
 /* Terminal Values */ 
 
@@ -21,24 +12,130 @@ terminal PLUS, MINUS, TIMES, DIVIDE, NOT;
 terminal ASSIGN, SEMICOLON, COMMA;
 terminal LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE;
 terminal ID, NUM;
+terminal UMINUS;
 
 /* Non-Terminal Values */ 
 non terminal program;
-non terminal declaration-list;
-non terminal declaration, var-declaration, fun-declaration;
-non terminal fun-prototype;
-non terminal type-specifier;
-non terminal params, param-list, param;
-non terminal compound_stmt, expression-stmt, selection-stmt, iteration-stmt, return-stmt;
-non terminal local-declarations;
-non terminal statement-list, statement;
+non terminal declaration_list;
+non terminal declaration, var_declaration, fun_declaration;
+non terminal fun_prototype;
+non terminal type_specifier;
+non terminal params, param_list, param;
+non terminal compound_stmt, expression_stmt, selection_stmt, iteration_stmt, return_stmt;
+non terminal local_declarations;
+non terminal statement_list, statement;
 non terminal expression;
 non terminal var;
-non terminal args, arg-list; 
+non terminal args, arg_list; 
+non terminal call; 
+
+/* Precedence (Lower has higher precedence) */ 
+precedence right ASSIGN;
+precedence left OR; 
+precedence left AND;
+precedence nonassoc LESSTHAN;
+precedence nonassoc GREATTHAN;
+precedence nonassoc LESSEQUAL;
+precedence nonassoc GREATEQUAL;
+precedence nonassoc EQ;
+precedence nonassoc NOTEQUAL;
+precedence left PLUS;
+precedence left MINUS; 
+precedence left TIMES;
+precedence left DIVIDE; 
+precedence right NOT;
+precedence right UMINUS;
+precedence right ELSE;
 
 
 start with program;
 
-program ::= 
-    /* empty */
-    ;
+program ::= declaration_list ;
+
+declaration_list ::= declaration_list declaration 
+                   | declaration ;
+
+declaration ::= var_declaration 
+              | fun_declaration
+              | fun_prototype ;
+
+var_declaration ::= type_specifier ID SEMICOLON 
+                  | type_specifier ID LBRACKET NUM RBRACKET SEMICOLON ;
+
+type_specifier ::= BOOL 
+                 | INT 
+                 | VOID ; 
+
+fun_declaration ::= type_specifier ID LPAREN params RPAREN compound_stmt ;
+
+fun_prototype ::= type_specifier ID LPAREN params RPAREN SEMICOLON ; 
+
+params ::= param_list 
+         | VOID ;
+
+param_list ::= param_list COMMA param
+             | param ; 
+
+param ::= type_specifier ID 
+        | type_specifier ID LBRACKET RBRACKET ; 
+
+compound_stmt ::= LBRACE local_declarations statement_list RBRACE ; 
+
+local_declarations ::= local_declarations var_declaration 
+                     | /* empty */ ;
+
+statement_list ::= statement_list statement 
+                 | /* empty */ ;
+
+statement ::= expression_stmt 
+            | compound_stmt
+            | selection_stmt
+            | iteration_stmt
+            | return_stmt ;
+
+expression_stmt ::= expression SEMICOLON 
+                  | SEMICOLON ;
+
+selection_stmt ::= IF LPAREN expression RPAREN statement 
+                 | IF LPAREN expression RPAREN statement ELSE statement ;
+
+iteration_stmt ::= WHILE LPAREN expression RPAREN statement ;
+
+return_stmt ::= RETURN expression SEMICOLON 
+              | RETURN SEMICOLON ; 
+
+expression ::= var ASSIGN expression 
+             | expression OR expression
+             | expression AND expression
+             | expression LESSTHAN expression
+             | expression GREATTHAN expression
+             | expression LESSEQUAL expression
+             | expression GREATEQUAL expression
+             | expression EQ expression
+             | expression NOTEQUAL expression
+             | expression PLUS expression
+             | expression MINUS expression
+             | expression TIMES expression
+             | expression DIVIDE expression
+             | NOT expression 
+             | MINUS expression %prec UMINUS 
+             | LPAREN expression RPAREN 
+             | var
+             | call 
+             | NUM 
+             | TRUTH ; 
+
+var ::= ID 
+      | ID LBRACKET expression RBRACKET ; 
+
+call ::= ID LPAREN args RPAREN ; 
+
+args ::= arg_list 
+       | /* empty */ ;
+
+arg_list ::= arg_list COMMA expression 
+           | expression ; 
+
+
+
+
