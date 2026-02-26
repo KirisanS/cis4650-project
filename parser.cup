@@ -3,6 +3,18 @@ import java_cup.runtime.*;
 parser code {:
 :};
 
+/* Precedence (Lower has higher precedence) */ 
+precedence right ASSIGN;
+precedence left OR; 
+precedence left AND;
+precedence nonassoc LESSTHAN GREATTHAN LESSEQUAL GREATEQUAL EQ NOTEQUAL;
+precedence left PLUS MINUS; 
+precedence left TIMES DIVIDE; 
+precedence right NOT;
+precedence right UMINUS;
+
+/* Terminal Values */ 
+
 terminal BOOL, ELSE, IF, INT, RETURN, VOID, WHILE, TRUTH;
 terminal LESSEQUAL, GREATEQUAL, EQ, NOTEQUAL, OR, AND, LESSTHAN, GREATTHAN;
 terminal PLUS, MINUS, TIMES, DIVIDE, NOT;
@@ -10,7 +22,20 @@ terminal ASSIGN, SEMICOLON, COMMA;
 terminal LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE;
 terminal ID, NUM;
 
+/* Non-Terminal Values */ 
 non terminal program;
+non terminal declaration-list;
+non terminal declaration, var-declaration, fun-declaration;
+non terminal fun-prototype;
+non terminal type-specifier;
+non terminal params, param-list, param;
+non terminal compound_stmt, expression-stmt, selection-stmt, iteration-stmt, return-stmt;
+non terminal local-declarations;
+non terminal statement-list, statement;
+non terminal expression;
+non terminal var;
+non terminal args, arg-list; 
+
 
 start with program;
 
