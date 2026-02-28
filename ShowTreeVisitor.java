@@ -63,7 +63,9 @@ public class ShowTreeVisitor implements AbsynVisitor {
         indent(level);
         System.out.println("CompoundExp: ");
         level++;
-        exp.decs.accept(this, level);
+        if (exp.decs != null) {
+            exp.decs.accept(this, level);
+        }
         exp.exps.accept(this, level);
     }
 
@@ -204,7 +206,6 @@ public class ShowTreeVisitor implements AbsynVisitor {
         indent(level);
         System.out.println("Body: ");
         level++;
-        indent(level);
         if (exp.body != null) {
             exp.body.accept(this, level);
         }
