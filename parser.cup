@@ -54,6 +54,7 @@ parser code {:
 :};
 
 
+
 /* Terminal Values */ 
 
 terminal BOOL, ELSE, IF, INT, RETURN, VOID, WHILE;
@@ -112,11 +113,12 @@ declaration_list ::= declaration_list:dl declaration:d
                      {: RESULT = new DecList(d, dl); :}
                    | declaration:d
                      {: RESULT = new DecList(d, null); :}
+                   /* ADD THIS: Major component recovery for declarations */
                    | declaration_list:dl error SEMICOLON
-                     {:
-                       parser.report_error("invalid declaration", cur_token);
-                       RESULT = dl;
-                      :}
+                     {: 
+                        parser.report_error("Malformed declaration skipped", cur_token);
+                        RESULT = dl; 
+                     :}
                     ;
 
 declaration ::= var_declaration:vd 
@@ -127,28 +129,24 @@ declaration ::= var_declaration:vd
                 {: RESULT = fp; :}
                 ;
 
-var_declaration ::=type_specifier:t ID:i SEMICOLON
-                {: RESULT = new SimpleDec(tleft, tright, t, i); :}
-              | type_specifier:t ID:i LBRACKET NUM:n RBRACKET SEMICOLON
-                  {: RESULT = new ArrayDec(tleft, tright, t, i, n); :}
-
-              | type_specifier:t ID:i ID:next
-                  {:
-                    parser.report_error("missing ';' after variable declaration", next);
-                    RESULT = new SimpleDec(tleft, tright, t, i);
-                  :}
-
-              | type_specifier:t ID:i error
-                  {:
-                    parser.report_error("invalid variable declaration (expected ';' or '[')", cur_token);
-                    RESULT = new SimpleDec(tleft, tright, t, i);
-                  :}
-              | type_specifier:t ID:i LBRACKET NUM:n RBRACKET error
-                  {:
-                    parser.report_error("missing ';' after array declaration", cur_token);
-                    RESULT = new ArrayDec(tleft, tright, t, i, n);
-                  :}
-              ;
+var_declaration ::=
+      type_specifier:t ID:i SEMICOLON
+        {: RESULT = new SimpleDec(tleft, tright, t, i); :}
+    | type_specifier:t ID:i LBRACKET NUM:n RBRACKET SEMICOLON
+        {: RESULT = new ArrayDec(tleft, tright, t, i, n); :}
+    | type_specifier:t ID:i error
+        {:
+           parser.report_error("Missing ';' after variable declaration",
+               new java_cup.runtime.Symbol(sym.SEMICOLON, ileft, iright));
+           RESULT = new SimpleDec(tleft, tright, t, i);
+        :}
+    | type_specifier:t ID:i LBRACKET NUM:n RBRACKET error
+        {:
+           parser.report_error("Missing ';' after array declaration",
+               new java_cup.runtime.Symbol(sym.SEMICOLON, nleft, nright));
+           RESULT = new ArrayDec(tleft, tright, t, i, n);
+        :}
+    ;
 
 type_specifier ::= BOOL:b 
                    {: RESULT = new NameTy(bleft, bright, NameTy.BOOLEAN); :}
@@ -188,37 +186,26 @@ compound_stmt ::= LBRACE local_declarations:ld statement_list:sl RBRACE
                   {: RESULT = new CompoundExp(ldleft, ldright, ld, sl); :}
                   ; 
 
-local_declarations ::= local_declarations:ld var_declaration:vd
-                       {: RESULT = new VarDecList(vd, ld); :}
-                     | /* empty */ 
-                       {: RESULT = null; :}
-                       ;
-statement_list ::=
-      statement_list:sl statement:s
-        {:
-            if (sl == null) {
-                RESULT = new ExpList(s, null);
-            } else {
-                ExpList t = sl;
-                while (t.tail != null) t = t.tail;
-                t.tail = new ExpList(s, null);
-                RESULT = sl;
-            }
-        :}
-    | statement_list:sl error SEMICOLON
-        {:
-            parser.report_error("invalid statement", cur_token);
-            RESULT = sl;
-        :}
-    | statement_list:sl error RBRACE
-        {:
-            parser.report_error("invalid statement before '}'", cur_token);
-            RESULT = sl;
-        :}
-    | /* empty */
+local_declarations ::=
+      local_declarations:ld var_declaration:vd
+        {: RESULT = new VarDecList(vd, ld); :}
+    |
         {: RESULT = null; :}
     ;
-
+    
+statement_list ::= statement_list:sl statement:s
+                   {:
+                      if (sl == null) RESULT = new ExpList(s, null);
+                      else {
+                        ExpList t = sl;
+                        while (t.tail != null) t = t.tail;
+                        t.tail = new ExpList(s, null);
+                        RESULT = sl;
+                      }
+                   :}
+                 | /* empty */
+                   {: RESULT = null; :}
+                 ;
 statement ::= expression_stmt:e  
               {: RESULT = e; :}
             | compound_stmt:c    
@@ -232,53 +219,35 @@ statement ::= expression_stmt:e
             ;
 
 
-expression_stmt ::=
-    expression:e SEMICOLON
-      {: RESULT = e; :}
-  | SEMICOLON
-      {: RESULT = new NilExp(0,0); :}
-  | expression:e error
-      {:
-          report_error_at(eleft, eright, "missing ';' after expression");
-          RESULT = e;
-      :}
-  ;
-
-selection_stmt ::=
-                IF:i LPAREN expression:e RPAREN statement:s ELSE statement:es
-                  {: RESULT = new IfExp(eleft, eright, e, s, es); :}
-              | IF:i LPAREN expression:e RPAREN statement:s
-                  {: RESULT = new IfExp(eleft, eright, e, s, null); :}
-
-              | IF:i error expression:e RPAREN statement:s
-                  {:
-                    parser.report_error("missing '(' after IF", i);
-                    RESULT = new IfExp(eleft, eright, e, s, null);
-                  :}
-
-              | IF:i LPAREN expression:e error statement:s
-                  {:
-                    parser.report_error("missing ')' after IF condition", i);
-                    RESULT = new IfExp(eleft, eright, e, s, null);
-                  :}
-              ;
-
-iteration_stmt ::=
-                  WHILE:w LPAREN expression:e RPAREN statement:s
-                    {: RESULT = new WhileExp(eleft, eright, e, s); :}
-
-                | WHILE:w error expression:e RPAREN statement:s
-                    {:
-                      parser.report_error("missing '(' after WHILE", w);
-                      RESULT = new WhileExp(eleft, eright, e, s);
+expression_stmt ::= expression:e SEMICOLON 
+                    {: RESULT = e; :}
+                  | SEMICOLON 
+                    {: RESULT = new NilExp(0,0); :}
+                  /* ADD THIS FOR RECOVERY */
+                  | expression:e error 
+                    {: 
+                       parser.report_error("Missing ';' after expression", 
+                          new java_cup.runtime.Symbol(sym.SEMICOLON, eleft, eright));
+                       RESULT = e; 
                     :}
+                    ;
 
-                | WHILE:w LPAREN expression:e error statement:s
-                    {:
-                      parser.report_error("missing ')' after WHILE condition", w);
-                      RESULT = new WhileExp(eleft, eright, e, s);
-                    :}
-                ;
+selection_stmt ::= IF LPAREN expression:e RPAREN statement:s ELSE statement:es
+                   {: RESULT = new IfExp(eleft, eright, e, s, es); :}
+                 | IF LPAREN expression:e RPAREN statement:s
+                   {: RESULT = new IfExp(eleft, eright, e, s, null); :}
+                 /* ADD THIS: Missing '(' recovery */
+                 | IF error expression:e RPAREN statement:s
+                   {: 
+                      parser.report_error("Missing '(' after 'if'", cur_token);
+                      RESULT = new IfExp(eleft, eright, e, s, null); 
+                   :}
+                 ;
+
+iteration_stmt ::= WHILE LPAREN expression:e RPAREN statement:s
+                   {: RESULT = new WhileExp(eleft, eright, e, s); :}
+                   ;
+
 return_stmt ::= RETURN expression:e SEMICOLON
                 {: RESULT = new ReturnExp(eleft, eright, e); :}
               | RETURN SEMICOLON 
@@ -315,18 +284,8 @@ expression ::= var:v ASSIGN expression:e
              | NOT expression:e1
                {: RESULT = new OpExp(e1left, e1right, e1, OpExp.NOT, null); :}
              | MINUS expression:e1 %prec UMINUS
-              | LPAREN expression:e1 RPAREN
-                {: RESULT = e1; :}
-              | LPAREN expression:e1 error
-                {:
-                  parser.report_error("missing RPAREN", cur_token);
-                  RESULT = e1;
-                :}
-              | LPAREN error RPAREN
-                {:
-                  parser.report_error("invalid parenthesis expression", cur_token);
-                  RESULT = null;
-                :}
+             | LPAREN expression:e1 RPAREN
+               {: RESULT = e1; :}
              | var:v
                {: RESULT = new VarExp(vleft, vright, v); :}
              | call:c 
@@ -338,52 +297,28 @@ expression ::= var:v ASSIGN expression:e
                ;
 
 // THIS IS SUS, CHECK WITH SOMEONE ELSE 
-var ::=
-            ID:i
-              {: RESULT = new SimpleVar(ileft, iright, i); :}
-          | ID:i LBRACKET expression:e RBRACKET
-              {: RESULT = new IndexVar(ileft, iright, i, e); :}
-          | ID:i LBRACKET expression:e error
-              {:
-                parser.report_error("missing RBRACKET", cur_token);
-                RESULT = new IndexVar(ileft, iright, i, e);
-              :}
-          | ID:i LBRACKET error RBRACKET
-              {:
-                parser.report_error("invalid index expression", cur_token);
-                RESULT = new IndexVar(ileft, iright, i, null);
-              :}
-          ;
+var ::= ID:i
+        {: RESULT = new SimpleVar(ileft, iright, i); :}
+      | ID:i LBRACKET expression:e RBRACKET
+        {: RESULT = new IndexVar(ileft, iright, i, e); :}
+        ; 
 
-varexp ::= var:v
+/* varexp ::= var:v
            {: RESULT = new VarExp(vleft, vright, v); :}
-           ;
+           ;   */
 
 call ::= ID:i LPAREN args:a RPAREN
-          {: RESULT = new CallExp(ileft, iright, i, a); :}
-        | ID:i LPAREN args:a error
-          {:
-            parser.report_error("missing ')'", cur_token);
-            RESULT = new CallExp(ileft, iright, i, a);
-          :}
-        ;
+         {: RESULT = new CallExp(ileft, iright, i, a); :}
+         ; 
+
 args ::= arg_list:a
          {: RESULT = a; :}
        | /* empty */ 
          {: RESULT = null; :}
          ;
 
-arg_list ::= arg_list:a COMMA expression:e
-        {: RESULT = new ExpList(e, a); :}
-      | expression:e
-        {: RESULT = new ExpList(e, null); :}
-      | arg_list:a COMMA error
-        {:
-          parser.report_error("missing expression after ','", cur_token);
-          RESULT = a;
-        :}
-      ;
-
-
-
-
+arg_list ::= arg_list:a COMMA expression:e 
+             {: RESULT = new ExpList(e, a); :}
+           | expression:e 
+             {: RESULT = new ExpList(e, null); :}
+             ; 
