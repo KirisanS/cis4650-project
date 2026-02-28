@@ -1,0 +1,12 @@
+int operatorPrecedenceStressTest(void)
+{
+    int x;
+    x = 1 + 2 * 3;
+    x = (1 + 2) * 3;
+
+    x = 1 + 2 * 3 < 10;
+    x = 1 + 2 * 3 < 10 && 5 > 2;
+    x = 1 + 2 * 3 < 10 && 5 > 2 || 0;
+
+    return x;
+}

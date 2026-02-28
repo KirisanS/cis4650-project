@@ -7,8 +7,9 @@ public class FunctionDec extends Dec {
     public VarDecList params;
     public Exp body;
 
-    public FunctionDec(int pos, NameTy result, String func, VarDecList params, Exp body) {
-        this.pos = pos
+    public FunctionDec(int row, int col, NameTy result, String func, VarDecList params, Exp body) {
+        this.row = row;
+        this.col = col;
         this.result = result;
         this.func = func;
         this.params = params;

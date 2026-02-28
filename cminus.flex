@@ -74,7 +74,7 @@ COMMENT = "/*"([^*]|\*+[^*/])*\*+"/"
 "||"        {return symbol(sym.OR);}
 "&&"        {return symbol(sym.AND);}
 "<"         {return symbol(sym.LESSTHAN);}
-">"         {return symbol(sym.GREATTHAN);}
+">"         {return symbol(sym.GREATERTHAN);}
 "+"         {return symbol(sym.PLUS);}
 "-"         {return symbol(sym.MINUS);}
 "*"         {return symbol(sym.TIMES);}

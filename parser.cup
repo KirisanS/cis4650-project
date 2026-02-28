@@ -8,35 +8,39 @@ parser code {:
 
 /* Terminal Values */ 
 
-terminal BOOL, ELSE, IF, INT, RETURN, VOID, WHILE, TRUTH;
-terminal LESSEQUAL, GREATEQUAL, EQ, NOTEQUAL, OR, AND, LESSTHAN, GREATTHAN;
+terminal BOOL, ELSE, IF, INT, RETURN, VOID, WHILE;
+terminal boolean TRUTH;
+terminal LESSEQUAL, GREATEQUAL, EQ, NOTEQUAL, OR, AND, LESSTHAN, GREATERTHAN;
 terminal PLUS, MINUS, TIMES, DIVIDE, NOT;
 terminal ASSIGN, SEMICOLON, COMMA;
 terminal LPAREN, RPAREN, LBRACKET, RBRACKET, LBRACE, RBRACE;
-terminal ID, NUM;
+terminal String ID;
+terminal Integer NUM;
 terminal UMINUS;
 
 /* Non-Terminal Values */ 
-non terminal program;
-non terminal declaration_list;
-non terminal declaration, var_declaration, fun_declaration;
-non terminal fun_prototype;
-non terminal type_specifier;
-non terminal params, param_list, param;
-non terminal compound_stmt, expression_stmt, selection_stmt, iteration_stmt, return_stmt;
-non terminal local_declarations;
-non terminal statement_list, statement;
-non terminal expression;
-non terminal var;
-non terminal args, arg_list; 
-non terminal call; 
+non terminal DecList program;
+non terminal DecList declaration_list;
+non terminal Dec declaration, fun_declaration, fun_prototype;
+non terminal VarDec var_declaration;
+non terminal NameTy type_specifier;
+non terminal VarDec param;
+non terminal VarDecList params, param_list, local_declarations;
+non terminal Exp compound_stmt, expression_stmt, selection_stmt, iteration_stmt, return_stmt;
+non terminal ExpList statement_list, statement_list_nonempty;
+non terminal Exp expression, statement;
+non terminal Var var;
+non terminal ExpList args, arg_list; 
+non terminal CallExp call; 
+non terminal IfExp matched_statement, unmatched_statement;
+non terminal VarExp varexp;
 
 /* Precedence (Lower has higher precedence) */ 
 precedence right ASSIGN;
 precedence left OR; 
 precedence left AND;
 precedence nonassoc LESSTHAN;
-precedence nonassoc GREATTHAN;
+precedence nonassoc GREATERTHAN;
 precedence nonassoc LESSEQUAL;
 precedence nonassoc GREATEQUAL;
 precedence nonassoc EQ;
@@ -52,91 +56,193 @@ precedence right ELSE;
 
 start with program;
 
-program ::= declaration_list ;
+program ::= declaration_list:d  
+            {: RESULT = d; :}
+            ;
 
-declaration_list ::= declaration_list declaration 
-                   | declaration ;
+declaration_list ::= declaration_list:dl declaration:d 
+                     {: RESULT = new DecList(d, dl); :}
+                   | declaration:d
+                     {: RESULT = new DecList(d, null); :}
+                    ;
 
-declaration ::= var_declaration 
-              | fun_declaration
-              | fun_prototype ;
+declaration ::= var_declaration:vd 
+                {: RESULT = vd; :}
+              | fun_declaration:fd 
+                {: RESULT = fd; :}
+              | fun_prototype:fp 
+                {: RESULT = fp; :}
+                ;
 
-var_declaration ::= type_specifier ID SEMICOLON 
-                  | type_specifier ID LBRACKET NUM RBRACKET SEMICOLON ;
+var_declaration ::= type_specifier:t ID:i SEMICOLON
+                    {: RESULT = new SimpleDec(tleft, tright, t, i); :}
+                  | type_specifier:t ID:i LBRACKET NUM:n RBRACKET SEMICOLON 
+                    {: RESULT = new ArrayDec(tleft, tright, t, i, n); :}
+                    ;
 
-type_specifier ::= BOOL 
-                 | INT 
-                 | VOID ; 
+type_specifier ::= BOOL:b 
+                   {: RESULT = new NameTy(bleft, bright, NameTy.BOOLEAN); :}
+                 | INT:i
+                   {: RESULT = new NameTy(ileft, iright, NameTy.INTEGER); :}
+                 | VOID:v 
+                   {: RESULT = new NameTy(vleft, vright, NameTy.VOID); :}
+                 ; 
 
-fun_declaration ::= type_specifier ID LPAREN params RPAREN compound_stmt ;
+fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:c
+                    {: RESULT = new FunctionDec(tleft, tright, t, i, p, c); :}
+                    ;
 
-fun_prototype ::= type_specifier ID LPAREN params RPAREN SEMICOLON ; 
+fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN SEMICOLON 
+                  {: RESULT = new FunctionDec(tleft, tright, t, i, p, null); :}
+                  ; 
 
-params ::= param_list 
-         | VOID ;
+params ::= param_list:p 
+           {: RESULT = p; :}
+         | VOID 
+           {: RESULT = null; :}
+           ;
 
-param_list ::= param_list COMMA param
-             | param ; 
+param_list ::= param_list:pl COMMA param:p
+               {: RESULT = new VarDecList(p, pl); :}
+             | param:p 
+               {: RESULT = new VarDecList(p, null); :}
+               ; 
 
-param ::= type_specifier ID 
-        | type_specifier ID LBRACKET RBRACKET ; 
+param ::= type_specifier:t ID:i
+          {: RESULT = new SimpleDec(tleft, tright, t, i); :}
+        | type_specifier:t ID:i LBRACKET RBRACKET 
+          {: RESULT = new ArrayDec(tleft, tright, t, i, 0); :}
+          ; 
 
-compound_stmt ::= LBRACE local_declarations statement_list RBRACE ; 
+compound_stmt ::= LBRACE local_declarations:ld statement_list:sl RBRACE 
+                  {: RESULT = new CompoundExp(ldleft, ldright, ld, sl); :}
+                  ; 
 
-local_declarations ::= local_declarations var_declaration 
-                     | /* empty */ ;
+local_declarations ::= local_declarations:ld var_declaration:vd
+                       {: RESULT = new VarDecList(vd, ld); :}
+                     | /* empty */ 
+                       {: RESULT = null; :}
+                       ;
 
-statement_list ::= statement_list statement 
-                 | /* empty */ ;
+statement_list ::= statement_list:sl statement:s
+                   {: 
+                      if (sl == null) {
+                        RESULT = new ExpList(s, null); 
+                      }
+                      else {
+                          ExpList t = sl;
+                          while (t.tail != null) t = t.tail;
+                          t.tail = new ExpList(s, null);
+                          RESULT = sl;
+                      }
+                   :}
+                 | /* empty */
+                   {: RESULT = null; :}
+                   ;
 
-statement ::= expression_stmt 
-            | compound_stmt
-            | selection_stmt
-            | iteration_stmt
-            | return_stmt ;
+statement ::= expression_stmt:e  
+              {: RESULT = e; :}
+            | compound_stmt:c    
+              {: RESULT = c; :}
+            | selection_stmt:s   
+              {: RESULT = s; :}
+            | iteration_stmt:i   
+              {: RESULT = i; :}
+            | return_stmt:r      
+              {: RESULT = r; :}
+            ;
 
-expression_stmt ::= expression SEMICOLON 
-                  | SEMICOLON ;
 
-selection_stmt ::= IF LPAREN expression RPAREN statement 
-                 | IF LPAREN expression RPAREN statement ELSE statement ;
+expression_stmt ::= expression:e SEMICOLON 
+                    {: RESULT = e; :}
+                  | SEMICOLON 
+                    {: RESULT = new NilExp(0,0); :}
+                    ;
 
-iteration_stmt ::= WHILE LPAREN expression RPAREN statement ;
+selection_stmt ::= IF LPAREN expression:e RPAREN statement:s ELSE statement:es
+                   {: RESULT = new IfExp(eleft, eright, e, s, es); :}
+                 | IF LPAREN expression:e RPAREN statement:s
+                   {: RESULT = new IfExp(eleft, eright, e, s, null); :}
+                 ;
 
-return_stmt ::= RETURN expression SEMICOLON 
-              | RETURN SEMICOLON ; 
+iteration_stmt ::= WHILE LPAREN expression:e RPAREN statement:s
+                   {: RESULT = new WhileExp(eleft, eright, e, s); :}
+                   ;
 
-expression ::= var ASSIGN expression 
-             | expression OR expression
-             | expression AND expression
-             | expression LESSTHAN expression
-             | expression GREATTHAN expression
-             | expression LESSEQUAL expression
-             | expression GREATEQUAL expression
-             | expression EQ expression
-             | expression NOTEQUAL expression
-             | expression PLUS expression
-             | expression MINUS expression
-             | expression TIMES expression
-             | expression DIVIDE expression
-             | NOT expression 
-             | MINUS expression %prec UMINUS 
-             | LPAREN expression RPAREN 
-             | var
-             | call 
-             | NUM 
-             | TRUTH ; 
+return_stmt ::= RETURN expression:e SEMICOLON
+                {: RESULT = new ReturnExp(eleft, eright, e); :}
+              | RETURN SEMICOLON 
+                {: RESULT = new ReturnExp(0, 0, null); :}
+                ; 
 
-var ::= ID 
-      | ID LBRACKET expression RBRACKET ; 
+// Changing var:v -> varexp:v for now. This will probably break, im confused. 
+expression ::= var:v ASSIGN expression:e
+               {: RESULT = new AssignExp(vleft, vright, new VarExp(vleft, vright, v), e); :}
+             | expression:e1 OR expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.OR, e2); :}
+             | expression:e1 AND expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.AND, e2); :}
+             | expression:e1 LESSTHAN expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.LESSTHAN, e2); :}
+             | expression:e1 GREATERTHAN expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.GREATERTHAN, e2); :}
+             | expression:e1 LESSEQUAL expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.LESSEQUAL, e2); :}
+             | expression:e1 GREATEQUAL expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.GREATEQUAL, e2); :}
+             | expression:e1 EQ expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.EQ, e2); :}
+             | expression:e1 NOTEQUAL expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.NOTEQUAL, e2); :}
+             | expression:e1 PLUS expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.PLUS, e2); :}
+             | expression:e1 MINUS expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.MINUS, e2); :}
+             | expression:e1 TIMES expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.TIMES, e2); :}
+             | expression:e1 DIVIDE expression:e2
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.DIVIDE, e2); :}
+             | NOT expression:e1
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.NOT, null); :}
+             | MINUS expression:e1 %prec UMINUS
+             | LPAREN expression:e1 RPAREN
+               {: RESULT = e1; :}
+             | var:v
+               {: RESULT = new VarExp(vleft, vright, v); :}
+             | call:c 
+               {: RESULT = c; :}
+             | NUM:n
+               {: RESULT = new IntExp(nleft, nright, n.intValue()); :} 
+             | TRUTH:t 
+               {: RESULT = new BoolExp(tleft, tright, t); :}
+               ;
 
-call ::= ID LPAREN args RPAREN ; 
+// THIS IS SUS, CHECK WITH SOMEONE ELSE 
+var ::= ID:i
+        {: RESULT = new SimpleVar(ileft, iright, i); :}
+      | ID:i LBRACKET expression:e RBRACKET
+        {: RESULT = new IndexVar(ileft, iright, i, e); :}
+        ; 
 
-args ::= arg_list 
-       | /* empty */ ;
+varexp ::= var:v
+           {: RESULT = new VarExp(vleft, vright, v); :}
+           ;
 
-arg_list ::= arg_list COMMA expression 
-           | expression ; 
+call ::= ID:i LPAREN args:a RPAREN
+         {: RESULT = new CallExp(ileft, iright, i, a); :}
+         ; 
+
+args ::= arg_list:a
+         {: RESULT = a; :}
+       | /* empty */ 
+         {: RESULT = null; :}
+         ;
+
+arg_list ::= arg_list:a COMMA expression:e 
+             {: RESULT = new ExpList(e, a); :}
+           | expression:e 
+             {: RESULT = new ExpList(e, null); :}
+             ; 
 
 
 

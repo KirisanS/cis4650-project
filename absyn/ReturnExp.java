@@ -4,8 +4,9 @@ public class ReturnExp extends Exp {
 
     public Exp exp;
 
-    public ReturnExp(int pos, Exp exp) {
-        this.pos = pos;
+    public ReturnExp(int row, int col, Exp exp) {
+        this.row = row;
+        this.col = col;
         this.exp = exp;
     }
 
