@@ -1,5 +1,0 @@
-void main(void) {
-  int x;
-  /* this comment never closes
-  x = 5;
-}

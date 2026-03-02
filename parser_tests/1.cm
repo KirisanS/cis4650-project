@@ -1,0 +1,30 @@
+/* Test File 1: No errors
+
+This file will result in no errors and will generate a parse 
+tree as expected.
+
+*/
+
+void fakeFunction (int x, int y, int z) {
+  
+  x = y * z;
+
+  if (x > 5) {
+    y = 10;
+  }
+
+  return x;
+}
+
+void main(void) {
+  int x;
+  int y;
+  int z[5]; 
+
+  x = 5;
+  y = 5 + 1;
+  z[1] = 0; 
+
+  fakeFunction(x, y, z[1]);
+
+}

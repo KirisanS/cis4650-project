@@ -1,3 +1,5 @@
-int x
-void main(void) {
-}
+void f(int n)
+ {
+   int x
+   y = 1;
+ }

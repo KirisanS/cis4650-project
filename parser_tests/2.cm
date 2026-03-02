@@ -1,0 +1,19 @@
+/* Test 2
+
+Error 1: There will be a integer declaration on line 12 that contains a missing SEMICOLON
+Error 2: On line 14, there will be a variable declaration with an invalid type (String)
+Error 3: On Line 16, there will be a missing LBRACKET '[' in the variable declaration
+]
+
+*/ 
+
+void main(void) {
+  
+  int x
+
+  string y; 
+
+  int z5];
+
+
+}

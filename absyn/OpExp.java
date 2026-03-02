@@ -10,7 +10,7 @@ public class OpExp extends Exp {
     public static final int EQ          = 5;
     public static final int NOTEQUAL    = 6;
     public static final int LESSTHAN    = 7;
-    public static final int GREATERTHAN   = 8;
+    public static final int GREATERTHAN = 8;
     public static final int LESSEQUAL   = 9;
     public static final int GREATEQUAL  = 10;
     public static final int NOT         = 11; 

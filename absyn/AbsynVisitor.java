@@ -14,6 +14,12 @@ public interface AbsynVisitor {
 
     public void visit( DecList exp, int level );
 
+    public void visit( ErrorDec exp, int level );
+
+    public void visit( ErrorExp exp, int level );
+
+    public void visit( ErrorVar exp, int level );
+
     public void visit( ExpList exp, int level );
 
     public void visit( FunctionDec exp, int level );

@@ -66,14 +66,18 @@ public class ShowTreeVisitor implements AbsynVisitor {
         if (exp.decs != null) {
             exp.decs.accept(this, level);
         }
-        exp.exps.accept(this, level);
+        if (exp.exps != null) {
+            exp.exps.accept(this, level);
+        }
     }
 
     public void visit(IfExp exp, int level) {
         indent(level);
         System.out.println("IfExp: ");
         level++;
-        exp.test.accept(this, level);
+        if (exp.test != null) {
+            exp.test.accept(this, level);
+        }
         exp.thenpart.accept(this, level);
         if (exp.elsepart != null) {
             exp.elsepart.accept(this, level);
@@ -101,8 +105,10 @@ public class ShowTreeVisitor implements AbsynVisitor {
                 System.out.println("Boolean");
                 break;
             case NameTy.VOID: 
-                System.out.println("VOID");
+                System.out.println("Void");
                 break;
+            case NameTy.ERROR: 
+                System.out.println("Error");
         }
     }
 
@@ -188,7 +194,7 @@ public class ShowTreeVisitor implements AbsynVisitor {
     /* Declaration */ 
     public void visit(ArrayDec exp, int level) {
         indent(level);
-        System.out.println("ArrayDec: " + exp.name + "Size: " + exp.size);
+        System.out.println("ArrayDec: " + exp.name + ", Size: " + exp.size);
         level++;
         exp.typ.accept(this, level);
     }
@@ -224,7 +230,9 @@ public class ShowTreeVisitor implements AbsynVisitor {
         indent(level);
         System.out.println("IndexVar: " + exp.name);
         level++;
-        exp.index.accept(this, level);
+        if(exp.index != null) {
+            exp.index.accept(this, level);
+        }
     }
 
     public void visit(SimpleVar exp, int level) {
@@ -232,6 +240,20 @@ public class ShowTreeVisitor implements AbsynVisitor {
         System.out.println("SimpleVar: " + exp.name);
     }
 
+    public void visit(ErrorExp exp, int level) {
+        indent(level);
+        System.out.println("[Error Expression Occured]");
+    }
+
+    public void visit(ErrorDec exp, int level) {
+        indent(level);
+        System.out.println("[Error Declaration Occured]");
+    }
+
+    public void visit(ErrorVar exp, int level) {
+        indent(level);
+        System.out.println("[Error Variable Occured]");
+    }
 
 
 
