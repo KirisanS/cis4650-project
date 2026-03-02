@@ -1,0 +1,37 @@
+/* Test 4
+
+Error 1: On line 13, there is an invalid return statement with two variables
+Error 2: On line 28, there is a indexed variable with no actual value for the index. 
+Error 3: On Line 31, there is an invalid function call, as int is a type, not an expression/variable
+
+*/ 
+
+int computeSomething(int x) {
+    x = x + x;
+
+    /* This error is fatal, as we do not know what value was inteded to be sent back. */
+    return x x;
+}
+
+
+void main(void) {
+
+    int x[5]; 
+
+    int y;
+    y = 10;
+
+    while (y < 10) {
+        y = y - 1;
+
+        /* This error is fatal, as we do not know the index to which we should assign it to y */
+        x[] = y;
+
+        /* This error is fatal, as we cannot call a function with invalid paramaters */ 
+        computeSomething(int);
+    }
+
+}
+
+
+

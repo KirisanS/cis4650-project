@@ -1,19 +1,20 @@
 /* Test 2
 
-Error 1: There will be a integer declaration on line 12 that contains a missing SEMICOLON
-Error 2: On line 14, there will be a variable declaration with an invalid type (String)
-Error 3: On Line 16, there will be a missing LBRACKET '[' in the variable declaration
-]
+Error 1: On line 13, there will be a variable declaration with an invalid type (String)
+Error 2: On line 16, there will be a missing semicolon ';', causing an error. 
+Error 3: On Line 19, there will be a missing LBRACKET '[' in the variable declaration
 
 */ 
 
 void main(void) {
-  
-  int x
 
-  string y; 
+  /* This will result in an error in the parse tree, as we do not know the intended value */
+  string x;
 
+  /* Our Program can recover from this as it is a syntactical error */ 
+  int y
+
+  /* Since the z and 5 become one ID token, we cannot extract the 5 as a integer, making it a fatal error */
   int z5];
-
 
 }

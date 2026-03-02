@@ -1,0 +1,31 @@
+/* Test 3
+
+Error 1: On line 10, there is a missing LPAREN '(' in the function prototype
+Error 2: On line 26, there is an invalid if conditional statement (it occurs at 21, and confirms error at 26).
+Error 3: On Line 29, there is a missing comma in the list of paramaters for the function. 
+
+*/ 
+
+/* This error is fatal, as we cannot discern the correct paramaters in the list */
+int functionPrototypeint x, int y);
+
+void main(void) {
+    int x; 
+    int y;
+    int z;
+
+    x = input();
+    y = 5;
+    z = 10;
+
+    /* This error is fatal, as we can never discern if this if conditional should can be entered */
+    if () {
+        x = y;
+    }
+
+}
+
+/* This error can be recovered from, as each variable can be read seperately. */
+int functionPrototype(int x int y) {
+    x = y;
+}

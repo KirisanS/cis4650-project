@@ -1,0 +1,77 @@
+/* Test 5
+
+This file is a much large test case that includes multiple different errors. 
+
+Error 1: On Line 13, there is an invalid type declared for the function prototype. 
+Error 2: On Line  27, there is a missing RPAREN in the function declaration. 
+Error 3: On Line  64, there is a invalid while conditional statement with multiple && || checks (Occurs on Line 56, reports error at 64).
+Error 4: On Line  20, there is a missing semicolon after the array declaration
+
+*/ 
+
+/* This error is fatal, as we cannot discern what the original type should have been */
+float milliDetector(int wiggles, int cuteness, int menaceLevel);
+
+int milliDetector(int wiggles, int cuteness, int menaceLevel);
+
+/* This error is not fatal, as there is a seperation between the void and compound statement {}, 
+if this were missing a LPAREN '(', then it would be fatal
+*/
+void main(void {
+
+    int wiggles[5]; 
+
+    int cuteness[5];
+
+    /* This is not fatal as this is just a syntax error. */
+    int menaceLevel[5]
+
+    bool milli;
+    bool thing;
+    bool yippee;
+
+    int index;
+    index = 0;
+
+    thing = true;
+
+    /* Not Milli */
+    wiggles[0] = 50; 
+    cuteness[0] = 60;
+    menaceLevel[0] = 20;
+
+    /* Milli! */
+    wiggles[1] = 999;
+    cuteness[1] = 999;
+    menaceLevel[1] = 999;
+
+    while (index < 2) {
+        if (milliDetector(wiggles[index], cuteness[index], menaceLevel[index])) {
+            milli = true;
+        }
+        index = index + 1;
+    }
+
+    /* This error is fatal, as we cannot discern what the proper conditional is*/
+    while (index > 0 && || thing) {
+        if (milli == true) {
+            yippee = true;
+        }
+    }
+
+
+
+}
+
+bool milliDetector(int wiggles, int cuteness, int menaceLevel) {
+
+    if (wiggles > 100) {
+        if (cuteness > 100) {
+            if (menaceLevel > 100) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+

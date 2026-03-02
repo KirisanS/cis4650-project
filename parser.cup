@@ -195,17 +195,35 @@ fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:c
                     {: 
                         parser.report_error("Missing LPAREN '(' in Function Declaration", 
                           new java_cup.runtime.Symbol(sym.error, ileft, iright));
-                        RESULT = new FunctionDec(tleft, tright, t, i, null, c);
+                        RESULT = new ErrorDec(0, 0);
                     :}
+                  | type_specifier:t ID:i LPAREN params:p compound_stmt:c 
+                    {: 
+                        parser.report_error("Missing RPAREN ')' in Function Declaration", 
+                          new java_cup.runtime.Symbol(sym.error, ileft, iright));
+                        RESULT = new FunctionDec(tleft, tright, t, i, p, c);
+                    :}
+                  | error ID:i LPAREN params:p RPAREN compound_stmt:c 
+                  {:
+                    parser.report_error("Invalid Type Found",
+                        new java_cup.runtime.Symbol(sym.error, ileft, iright));
+                    RESULT = new ErrorDec(0, 0);
+                  :}
                     ;
 
 fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN SEMICOLON 
-                  {: RESULT = new FunctionDec(tleft, tright, t, i, p, null); :}
+                  {: RESULT = new FunctionDec(tleft, tright, t, i, p, new NilExp(0, 0)); :}
                 | type_specifier:t ID:i error RPAREN SEMICOLON 
                   {: 
                     parser.report_error("Missing LPAREN '(' in Function Prototype", 
                       new java_cup.runtime.Symbol(sym.error, ileft, iright));
-                    RESULT = new FunctionDec(tleft, tright, t, i, null, null);
+                    RESULT = new ErrorDec(0, 0);
+                  :}
+                | error ID:i LPAREN params:p RPAREN SEMICOLON 
+                  {:
+                    parser.report_error("Invalid Type Found",
+                        new java_cup.runtime.Symbol(sym.error, ileft, iright));
+                    RESULT = new ErrorDec(0, 0);
                   :}
                   ; 
 
@@ -231,7 +249,13 @@ param_list ::= param_list:pl COMMA param:p
                {: 
                   parser.report_error("Missing Comma ',' in parameter list", 
                     new java_cup.runtime.Symbol(sym.error, plleft, plright));
-                  RESULT = new VarDecList(p, pl);
+                  if(pl == null) RESULT = new VarDecList(p, null);
+                  else {
+                    VarDecList t = pl;
+                    while (t.tail != null) t = t.tail;
+                    t.tail = new VarDecList(p, null);
+                    RESULT = pl;
+                  }
               :}
                ; 
 
@@ -245,8 +269,7 @@ compound_stmt ::= LBRACE local_declarations:ld statement_list:sl RBRACE
                   {: RESULT = new CompoundExp(ldleft, ldright, ld, sl); :}
                   ; 
 
-local_declarations ::=
-      local_declarations:ld var_declaration:vd
+local_declarations ::= local_declarations:ld var_declaration:vd
         {: 
           if (ld == null) RESULT = new VarDecList(vd, null);
           else {
@@ -301,11 +324,11 @@ expression_stmt ::= expression:e SEMICOLON
 selection_stmt ::= IF LPAREN expression:e RPAREN statement:s ELSE statement:es
                    {: RESULT = new IfExp(eleft, eright, e, s, es); :}
                  | IF LPAREN expression:e RPAREN statement:s
-                   {: RESULT = new IfExp(eleft, eright, e, s, null); :}
+                   {: RESULT = new IfExp(eleft, eright, e, s, new NilExp(0, 0)); :}
                  | IF error expression:e RPAREN statement:s
                    {: 
                       parser.report_error("Missing '(' after 'if'", cur_token);
-                      RESULT = new IfExp(eleft, eright, e, s, null); 
+                      RESULT = new IfExp(eleft, eright, e, s, new NilExp(0, 0)); 
                    :}
                  | IF LPAREN error RPAREN statement:s
                    {: 
@@ -321,11 +344,6 @@ iteration_stmt ::= WHILE LPAREN expression:e RPAREN statement:s
                       parser.report_error("Missing '(' in while loop conditional", cur_token);
                       RESULT = new WhileExp(eleft, eright, e, s); 
                    :}
-                 | WHILE LPAREN expression:e error statement:s
-                   {: 
-                      parser.report_error("Missing ')' in 'while loop conditional", cur_token);
-                      RESULT = new WhileExp(eleft, eright, e, s); 
-                   :} 
                  | WHILE LPAREN error RPAREN statement:s
                    {: 
                       parser.report_error("Invalid while conditional statement", cur_token);
@@ -336,7 +354,7 @@ iteration_stmt ::= WHILE LPAREN expression:e RPAREN statement:s
 return_stmt ::= RETURN expression:e SEMICOLON
                 {: RESULT = new ReturnExp(eleft, eright, e); :}
               | RETURN SEMICOLON 
-                {: RESULT = new ReturnExp(0, 0, null); :}
+                {: RESULT = new ReturnExp(0, 0, new NilExp(0, 0)); :}
               | RETURN error:e SEMICOLON
                 {: 
                   parser.report_error("Invalid Return Statement",
@@ -372,8 +390,10 @@ expression ::= var:v ASSIGN expression:e
              | expression:e1 DIVIDE expression:e2
                {: RESULT = new OpExp(e1left, e1right, e1, OpExp.DIVIDE, e2); :}
              | NOT expression:e1
-               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.NOT, null); :}
-             | MINUS expression:e1 %prec UMINUS
+               {: RESULT = new OpExp(e1left, e1right, e1, OpExp.NOT, new NilExp(0, 0)); :}
+             | MINUS:m expression:e
+                 {: RESULT = new OpExp(mleft, mright, new NilExp(0, 0), OpExp.UMINUS, e); :}
+                 %prec UMINUS
              | LPAREN expression:e1 RPAREN
                {: RESULT = e1; :}
              | var:v
