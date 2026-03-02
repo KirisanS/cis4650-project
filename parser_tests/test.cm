@@ -1,3 +1,15 @@
+int ;
+int a;
+int ;
+int r;
+
 int test(void) {
-    a = a--b;
+    int b;
+    int ;
+    /* Doesn't have 3 successfully parsed tokens - hence ignores to recover */
+    int ;
+    int ;
+
+    int y;
+    int z;
 }

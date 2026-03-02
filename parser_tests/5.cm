@@ -3,9 +3,9 @@
 This file is a much large test case that includes multiple different errors. 
 
 Error 1: On Line 13, there is an invalid type declared for the function prototype. 
-Error 2: On Line  27, there is a missing RPAREN in the function declaration. 
-Error 3: On Line  64, there is a invalid while conditional statement with multiple && || checks (Occurs on Line 56, reports error at 64).
-Error 4: On Line  20, there is a missing semicolon after the array declaration
+Error 2: On Line 27, there is a missing RPAREN in the function declaration. 
+Error 3: On Line 64, there is a invalid while conditional statement with multiple && || checks (Occurs on Line 56, reports error at 64).
+Error 4: On Line 20, there is a missing semicolon after the array declaration
 
 */ 
 

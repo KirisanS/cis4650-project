@@ -9,9 +9,12 @@ parser code {:
        reason for the error which is passed into the method in the
        String 'message'. */
 
+      /* Overwritting Syntax_Error to allow our error handling to have precedence */ 
       public void syntax_error(Symbol symbol) {
 
       }
+
+      /* Reporting Error to Stdout */
       public void report_error(String message, Object info) {
       valid = false;
       StringBuffer m = new StringBuffer("Error");
@@ -60,7 +63,6 @@ parser code {:
 
 
 /* Terminal Values */ 
-
 terminal BOOL, ELSE, IF, INT, RETURN, VOID, WHILE;
 terminal boolean TRUTH;
 terminal LESSEQUAL, GREATEQUAL, EQ, NOTEQUAL, OR, AND, LESSTHAN, GREATERTHAN;
@@ -72,12 +74,10 @@ terminal Integer NUM;
 terminal UMINUS;
 
 /* Non-Terminal Values */ 
-non terminal DecList program;
-non terminal DecList declaration_list;
+non terminal DecList program, declaration_list;
 non terminal Dec declaration, fun_declaration, fun_prototype;
-non terminal VarDec var_declaration;
+non terminal VarDec var_declaration, param;
 non terminal NameTy type_specifier;
-non terminal VarDec param;
 non terminal VarDecList params, param_list, local_declarations;
 non terminal Exp compound_stmt, expression_stmt, selection_stmt, iteration_stmt, return_stmt;
 non terminal ExpList statement_list;
@@ -156,7 +156,7 @@ var_declaration ::=
                new java_cup.runtime.Symbol(sym.error, ileft, iright));
            RESULT = new ErrorDec(0, 0);
         :}
-    | type_specifier:t ID:i LBRACKET RBRACKET 
+    | type_specifier:t ID:i LBRACKET error RBRACKET SEMICOLON
         {:
            parser.report_error("Missing value in Array Size Declaration",
                new java_cup.runtime.Symbol(sym.error, ileft, iright));
