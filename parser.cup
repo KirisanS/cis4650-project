@@ -174,9 +174,9 @@ var_declaration ::=
                new java_cup.runtime.Symbol(sym.SEMICOLON, nleft, nright));
            RESULT = new ArrayDec(tleft, tright, t, i, n);
         :}
-    | ID:i ID:i SEMICOLON
+    | error ID:i SEMICOLON
         {:
-           parser.report_error("blah",
+           parser.report_error("Invalid Type Found",
                new java_cup.runtime.Symbol(sym.error, ileft, iright));
            RESULT = new ErrorDec(0, 0);
         :}
@@ -188,8 +188,7 @@ type_specifier ::= BOOL:b
                    {: RESULT = new NameTy(ileft, iright, NameTy.INTEGER); :}
                  | VOID:v 
                    {: RESULT = new NameTy(vleft, vright, NameTy.VOID); :}
-                 | error:e 
-                   {: RESULT = new ErrorVar(0, 0); :}
+                  ;
 fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:c
                     {: RESULT = new FunctionDec(tleft, tright, t, i, p, c); :}
                   | type_specifier:t ID:i error RPAREN compound_stmt:c 
