@@ -54,16 +54,9 @@ java -cp .:java-cup-0.11b.jar Scanner < scanner_tests/test_basic.cm
 this reads input from standard input and prints token names.
 
 
-### parser
+## how to run the compiler
 
-```bash
-java -cp .:java-cup-0.11b.jar Main parser_tests/test_basic.cm
-```
-this parses the file and prints the abstract syntax tree.
-
-
-
-## how to run: the full compiler driver
+### printing the abstract syntax tree
 
 ```bash
 java -cp .:java-cup-0.11b.jar CM -a parser_tests/1.cm
@@ -71,18 +64,18 @@ java -cp .:java-cup-0.11b.jar CM -a parser_tests/1.cm
 
 the -a flag enables abstract syntax tree printing.
 - `1.cm` may be replaced with the other test files found in the same directory, ie., `2.cm, 3.cm, 4.cm, 5.cm`
-- output will be placed in output.txt
+- syntax errors are printed to stderr
 
-### how to: output the parse tree to a file
+### output the parse tree to a file
 
 ```bash
 java -cp .:java-cup-0.11b.jar CM -a parser_tests/1.cm > output.txt
 ```
 
-the -a flag enables abstract syntax tree printing.
+as previously stated, the -a flag enables abstract syntax tree printing.
 - `1.cm` may be replaced with the other test files found in the same directory, ie., `2.cm, 3.cm, 4.cm, 5.cm`
-- output will be placed in output.txt
 - syntax errors are printed to stderr
+- output will be placed in output.txt
 
 ---
 
