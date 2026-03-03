@@ -3,31 +3,35 @@ import java_cup.runtime.*;
 import absyn.*;
 
 parser code {:
-    
-    /* Change the method report_error so it will display the line and
-       column of where the error occurred in the input as well as the
-       reason for the error which is passed into the method in the
-       String 'message'. */
+    // override the default error printing
+    // allows our error handling to have precedence
+    public void syntax_error(Symbol symbol) {
 
-      /* Overwritting Syntax_Error to allow our error handling to have precedence */ 
-      public void syntax_error(Symbol symbol) {
+    }
 
-      }
-
-      /* Reporting Error to Stdout */
-      public void report_error(String message, Object info) {
+    // Change the method report_error so it will display the line and
+    // column of where the error occurred in the input as well as the
+    // reason for the error which is passed into the method in the
+    // String 'message'.
+    public void report_error(String message, Object info) {
+      // assuming parsing starts valid, the first time an error occurs,
+      // set valid to false so we can later decide to continue or reject compilation
       valid = false;
+
+      // start building the error message piece by piece
       StringBuffer m = new StringBuffer("Error");
 
       if (info instanceof java_cup.runtime.Symbol) {
+        // strat extracting location and token info
         java_cup.runtime.Symbol s = (java_cup.runtime.Symbol) info;
 
+        // add line and column: add +1 because cup stores lines/columns starting at 0
         if (s.left >= 0) {
           m.append(" in line " + (s.left + 1));
           if (s.right >= 0) m.append(", column " + (s.right + 1));
         }
 
-        // token type + value
+        // constructing the custom error message: token type + value
         m.append(" : ").append(message);
         m.append(" (token ").append(sym.terminalNames[s.sym]);
         if (s.value != null) m.append(", value=").append(s.value);
@@ -38,6 +42,7 @@ parser code {:
 
       System.err.println(m);
     }
+
     private void report_error_at(int line, int col, String message) {
         valid = false;
         System.err.println(
@@ -46,21 +51,21 @@ parser code {:
             " : " + message
         );
     }
-    /* Change the method report_fatal_error so when it reports a fatal
-       error it will display the line and column number of where the
-       fatal error occurred in the input as well as the reason for the
-       fatal error which is passed into the method in the object
-       'message' and then exit.*/
+
+    // Change the method report_fatal_error so when it reports a fatal
+    // error it will display the line and column number of where the
+    // fatal error occurred in the input as well as the reason for the
+    // fatal error which is passed into the method in the object
+    // 'message' and then exit.
     public void report_fatal_error(String message, Object info) {
         report_error(message, info);
         System.exit(1);
     }
 
-    /* Assume true at the start, but set to false with parsing errors */
+    // Assume true at the start, but set to false with parsing errors
+    // assumes valid input unless an error occurs
     public static boolean valid = true;
 :};
-
-
 
 /* Terminal Values */ 
 terminal BOOL, ELSE, IF, INT, RETURN, VOID, WHILE;
@@ -73,7 +78,7 @@ terminal String ID;
 terminal Integer NUM;
 terminal UMINUS;
 
-/* Non-Terminal Values */ 
+/* Non-Terminal Values - grammar nodes */ 
 non terminal DecList program, declaration_list;
 non terminal Dec declaration, fun_declaration, fun_prototype;
 non terminal VarDec var_declaration, param;
@@ -87,6 +92,10 @@ non terminal ExpList args, arg_list;
 non terminal Exp call; 
 
 /* Precedence (Lower has higher precedence) */ 
+// Resolves shift/reduce conflicts
+// Lets you simplify the grammar
+// Handles dangling-else
+// Handles unary minus
 precedence right ASSIGN;
 precedence left OR; 
 precedence left AND;
@@ -104,14 +113,27 @@ precedence right NOT;
 precedence right UMINUS;
 precedence right ELSE;
 
-
+// start symbol of grammar: "valid input must reduce to program"
 start with program;
 
+// root of the AST is a DecList
+//  - a valid C- program is a list of declarations
 program ::= declaration_list:d  
             {: RESULT = d; :}
             ;
 
-declaration_list ::= declaration_list:dl declaration:d 
+// builds a linked list of declarations
+// nodes are manually appended
+// ie.,
+// - int x;
+// - int y;
+// corresponds to:
+// DecList
+//   head -> x
+//   tail -> DecList
+//             head -> y
+//             tail -> null
+declaration_list ::= declaration_list:dl declaration:d
                      {: 
                       if(dl == null) RESULT = new DecList(d, null);
                       else {
@@ -123,7 +145,7 @@ declaration_list ::= declaration_list:dl declaration:d
                      :}
                    | declaration:d
                      {: RESULT = new DecList(d, null); :}
-                   /* ADD THIS: Major component recovery for declarations */
+                   /* Major component recovery for declarations */
                    | declaration_list:dl error SEMICOLON
                      {: 
                         parser.report_error("Malformed declaration skipped", cur_token);
@@ -131,6 +153,10 @@ declaration_list ::= declaration_list:dl declaration:d
                      :}
                     ;
 
+// A declaration in C- can be:
+// - A variable declaration
+// - A function definition
+// - A function prototype
 declaration ::= var_declaration:vd 
                 {: RESULT = vd; :}
               | fun_declaration:fd 
@@ -139,49 +165,60 @@ declaration ::= var_declaration:vd
                 {: RESULT = fp; :}
                 ;
                 
+// defines the grammar for declaring variables in C-
+// describes valid forms and error cases
+// valid forms:
+// - int x;
+// - bool flag;
+// - int arr[10];
 var_declaration ::=
-      type_specifier:t ID:i SEMICOLON
-        {: RESULT = new SimpleDec(tleft, tright, t, i); :}
-    | type_specifier:t ID:i LBRACKET NUM:n RBRACKET SEMICOLON
-        {: RESULT = new ArrayDec(tleft, tright, t, i, n); :}
-    | type_specifier:t ID:i RBRACKET SEMICOLON 
-        {:
-           parser.report_error("Missing LBRACKET '[' in Array declaration",
-               new java_cup.runtime.Symbol(sym.error, ileft, iright));
-           RESULT = new ErrorDec(0, 0);
-        :}
-    | type_specifier:t ID:i LBRACKET NUM:n SEMICOLON 
-        {:
-           parser.report_error("Missing RBRACKET ']' in Array declaration",
-               new java_cup.runtime.Symbol(sym.error, ileft, iright));
-           RESULT = new ErrorDec(0, 0);
-        :}
-    | type_specifier:t ID:i LBRACKET error RBRACKET SEMICOLON
-        {:
-           parser.report_error("Missing value in Array Size Declaration",
-               new java_cup.runtime.Symbol(sym.error, ileft, iright));
-           RESULT = new ErrorDec(0, 0);
-        :}
-    | type_specifier:t ID:i error
-        {:
-           parser.report_error("Missing ';' after variable declaration",
-               new java_cup.runtime.Symbol(sym.SEMICOLON, ileft, iright));
-           RESULT = new SimpleDec(tleft, tright, t, i);
-        :}
-    | type_specifier:t ID:i LBRACKET NUM:n RBRACKET error
-        {:
-           parser.report_error("Missing ';' after array declaration",
-               new java_cup.runtime.Symbol(sym.SEMICOLON, nleft, nright));
-           RESULT = new ArrayDec(tleft, tright, t, i, n);
-        :}
-    | error ID:i SEMICOLON
-        {:
-           parser.report_error("Invalid Type Found",
-               new java_cup.runtime.Symbol(sym.error, ileft, iright));
-           RESULT = new ErrorDec(0, 0);
-        :}
-    ;
+    type_specifier:t ID:i SEMICOLON
+      {: RESULT = new SimpleDec(tleft, tright, t, i); :}
+  | type_specifier:t ID:i LBRACKET NUM:n RBRACKET SEMICOLON
+      {: RESULT = new ArrayDec(tleft, tright, t, i, n); :}
+  | type_specifier:t ID:i RBRACKET SEMICOLON 
+      {:
+          parser.report_error("Missing LBRACKET '[' in Array declaration",
+              new java_cup.runtime.Symbol(sym.error, ileft, iright));
+          RESULT = new ErrorDec(0, 0);
+      :}
+  | type_specifier:t ID:i LBRACKET NUM:n SEMICOLON 
+      {:
+          parser.report_error("Missing RBRACKET ']' in Array declaration",
+              new java_cup.runtime.Symbol(sym.error, ileft, iright));
+          RESULT = new ErrorDec(0, 0);
+      :}
+  | type_specifier:t ID:i LBRACKET error RBRACKET SEMICOLON
+      {:
+          parser.report_error("Missing value in Array Size Declaration",
+              new java_cup.runtime.Symbol(sym.error, ileft, iright));
+          RESULT = new ErrorDec(0, 0);
+      :}
+  | type_specifier:t ID:i error
+      {:
+          parser.report_error("Missing ';' after variable declaration",
+              new java_cup.runtime.Symbol(sym.SEMICOLON, ileft, iright));
+          RESULT = new SimpleDec(tleft, tright, t, i);
+      :}
+  | type_specifier:t ID:i LBRACKET NUM:n RBRACKET error
+      {:
+          parser.report_error("Missing ';' after array declaration",
+              new java_cup.runtime.Symbol(sym.SEMICOLON, nleft, nright));
+          RESULT = new ArrayDec(tleft, tright, t, i, n);
+      :}
+  | error ID:i SEMICOLON
+      {:
+          parser.report_error("Invalid Type Found",
+              new java_cup.runtime.Symbol(sym.error, ileft, iright));
+          RESULT = new ErrorDec(0, 0);
+      :}
+  ;
 
+// defines the allowed data types in C-: bool, int, and void
+// type_specifier is the grammar rule that recognizes type keywords
+// What Happens When It Parses int:
+// int x -> lexer produces tokens -> cup sees INT token -> it matches INT:i -> AST node created
+// - note: ileft is line number and iright is column number
 type_specifier ::= BOOL:b 
                    {: RESULT = new NameTy(bleft, bright, NameTy.BOOLEAN); :}
                  | INT:i
@@ -189,6 +226,21 @@ type_specifier ::= BOOL:b
                  | VOID:v 
                    {: RESULT = new NameTy(vleft, vright, NameTy.VOID); :}
                   ;
+                  
+// defines the grammar for function definitions in C-
+// Valid form:
+// - type identifier ( parameters ) { body }
+// - example: int main() { return 0; }
+// after cup reduces, it executes the RESULT = new FunctionDec(...) block
+//
+// FunctionDec: it builds a full AST node representing the function:
+// -  FunctionDec
+//      return type -> t
+//      function name -> i
+//      parameters -> p
+//      body -> c
+// tleft and tright are used so the AST node knows where it appears in the source code
+// in this project, tleft stores the line number and tright stores the column number
 fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:c
                     {: RESULT = new FunctionDec(tleft, tright, t, i, p, c); :}
                   | type_specifier:t ID:i error RPAREN compound_stmt:c 
@@ -211,6 +263,13 @@ fun_declaration ::= type_specifier:t ID:i LPAREN params:p RPAREN compound_stmt:c
                   :}
                     ;
 
+// function prototype declares a function without providing a body
+// example: int add(int a, int b);
+// - which is different than a function that has a body that "returns"
+// - tells the compiler that this function exists, but its body is defined elsewhere
+//
+// in a normal function declaration: new FunctionDec(..., body)
+// - body is a CompoundExp but there is no body, thus new NilExp(0, 0) is passed as a placeholder
 fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN SEMICOLON 
                   {: RESULT = new FunctionDec(tleft, tright, t, i, p, new NilExp(0, 0)); :}
                 | type_specifier:t ID:i error RPAREN SEMICOLON 
@@ -227,12 +286,25 @@ fun_prototype ::= type_specifier:t ID:i LPAREN params:p RPAREN SEMICOLON
                   :}
                   ; 
 
+// params represents the entire parameter section inside parentheses of a function
+// grammar allows two possibilities:
+// 1. parameter list: builds a linked list of parameter declarations
+// 2. void: function takes no parameters
+//    - instead of building a parameter node, null is returned
 params ::= param_list:p 
            {: RESULT = p; :}
          | VOID 
            {: RESULT = null; :}
            ;
 
+// builds a linked list of parameters using VarDecList
+// example: int add(int a, bool b)
+// would build:
+// VarDecList
+//   head -> SimpleDec(int a)
+//   tail -> VarDecList
+//              head -> SimpleDec(bool b)
+//              tail -> null
 param_list ::= param_list:pl COMMA param:p
                {: 
                   if(pl == null) RESULT = new VarDecList(p, null);
@@ -258,17 +330,30 @@ param_list ::= param_list:pl COMMA param:p
                   }
               :}
                ; 
+// Current grammar does not allow int main()
+// to allow such, add:
+// | /* empty */ {: RESULT = null; :}
 
-param ::= type_specifier:t ID:i
+// defines one single function parameter
+// - example: int add(int a, int b)
+// - each of int a, int b is a param
+// case 1: Normal Parameter (int a), type_specifier:t ID:i
+// case 2: Array Parameter (int arr[]), type_specifier:t ID:i LBRACKET RBRACKET
+ param ::= type_specifier:t ID:i
           {: RESULT = new SimpleDec(tleft, tright, t, i); :}
         | type_specifier:t ID:i LBRACKET RBRACKET 
           {: RESULT = new ArrayDec(tleft, tright, t, i, 0); :}
           ; 
 
+// a compound statement is a block of code inside { ... }
+// a new scope containing:
+// - local variable declarations
+// - statements
 compound_stmt ::= LBRACE local_declarations:ld statement_list:sl RBRACE 
                   {: RESULT = new CompoundExp(ldleft, ldright, ld, sl); :}
                   ; 
 
+// represents all variable declarations inside a block
 local_declarations ::= local_declarations:ld var_declaration:vd
         {: 
           if (ld == null) RESULT = new VarDecList(vd, null);
@@ -283,6 +368,7 @@ local_declarations ::= local_declarations:ld var_declaration:vd
         {: RESULT = null; :}
     ;
     
+// represents all executable statements inside a block
 statement_list ::= statement_list:sl statement:s
                    {:
                       if (sl == null) RESULT = new ExpList(s, null);
@@ -363,6 +449,7 @@ return_stmt ::= RETURN expression:e SEMICOLON
                 :} 
                 ; 
 
+// represents anything that produces a value
 expression ::= var:v ASSIGN expression:e
                {: RESULT = new AssignExp(vleft, vright, new VarExp(vleft, vright, v), e); :}
              | expression:e1 OR expression:e2
