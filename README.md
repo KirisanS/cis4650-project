@@ -75,7 +75,7 @@ java -cp .:java-cup-0.11b.jar CM -a parser_tests/1.cm > output.txt
 as previously stated, the -a flag enables abstract syntax tree printing.
 - `1.cm` may be replaced with the other test files found in the same directory, ie., `2.cm, 3.cm, 4.cm, 5.cm`
 - syntax errors are printed to stderr
-- output will be placed in output.txt
+- the new addition is that output will be placed in output.txt
 
 ---
 
