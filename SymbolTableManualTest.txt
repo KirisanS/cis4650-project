@@ -1,0 +1,68 @@
+
+    SymbolTable table = new SymbolTable();
+        
+    // Enter global scope
+    table.enterScope("the global scope");
+    
+    // int i;
+    SimpleDec i = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.INTEGER), "i");
+    table.insert("i", i);
+    
+    // int j;
+    SimpleDec j = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.INTEGER), "j");
+    table.insert("j", j);
+    
+    // int f(int size)
+    VarDecList params = new VarDecList(
+        new SimpleDec(0, 0, new NameTy(0, 0, NameTy.INTEGER), "size"), null);
+    FunctionDec f = new FunctionDec(0, 0, new NameTy(0, 0, NameTy.INTEGER), "f", params, null);
+    table.insert("f", f);
+
+        // Enter function f scope
+    table.enterScope("the scope for function f");
+    
+    // char i -- we dont have char so use bool to test shadowing
+    SimpleDec i2 = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "i");
+    table.insert("i", i2);
+    
+    // char temp
+    SimpleDec temp = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "temp");
+    table.insert("temp", temp);
+    
+    // int size
+    SimpleDec size = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.INTEGER), "size");
+    table.insert("size", size);
+    
+    // Enter first nested block
+    table.enterScope("a new block");
+
+    // double j -- use int to test
+    SimpleDec j2 = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.INTEGER), "j");
+    table.insert("j", j2);
+    
+    // Test lookup - should find inner j not outer j
+    // System.out.println("Lookup j (should be inner): " + 
+    //     (table.lookup("j") instanceof SimpleDec ? "SimpleDec" : "other"));
+    
+    // // Test inCurrentScope
+    // System.out.println("i in current scope (should be false): " + table.inCurrentScope("i"));
+    // System.out.println("j in current scope (should be true): " + table.inCurrentScope("j"));
+    
+    table.exitScope("the block");
+
+    // After exiting - j should resolve to outer j again
+    // System.out.println("Lookup j after block (should be outer): " + (table.lookup("j") != null ? "found" : "not found"));
+
+    // Enter second nested block
+    table.enterScope("a new block");
+    
+    SimpleDec j3 = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "j");
+    table.insert("j", j3);
+
+    table.exitScope("the block");
+        
+    table.exitScope("the function scope");
+
+    // System.out.println("Lookup i after function (should be global int): " + (table.lookup("i") != null ? "found" : "not found"));
+
+    table.exitScope("the global scope");

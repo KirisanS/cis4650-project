@@ -11,12 +11,12 @@ class CM {
       String filename = null;
 
       //allows fof either arg input order
-      for(int i =0; i<argv.length; i++){
-        if (argv[i].equals("-a")){
+      for(int n =0; n<argv.length; n++){
+        if (argv[n].equals("-a")){
           RUN_PARSER = true;
         }
         else{
-          filename = argv[i];
+          filename = argv[n];
         }
       }
       if (RUN_PARSER){
