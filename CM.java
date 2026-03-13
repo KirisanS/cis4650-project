@@ -3,6 +3,7 @@ import absyn.*;
 
 class CM {
   public final static boolean SHOW_TREE = true;
+  public final static boolean SHOW_SEMANTIC = true;
   public static void main(String argv[]) {
 
     try {
@@ -22,10 +23,16 @@ class CM {
       if (RUN_PARSER){
         parser p = new parser(new Lexer(new FileReader(filename)));
         Absyn result = (Absyn)(p.parse().value);
+        if (SHOW_SEMANTIC && result != null) {
+          SemanticAnalyzer visitor = new SemanticAnalyzer();
+          result.accept(visitor, 0);
+          visitor.table.exitScope("global scope", 0);
+        }
         if (SHOW_TREE && result != null) {
           System.out.println("The abstract syntax tree is:");
           AbsynVisitor visitor = new ShowTreeVisitor();
           result.accept(visitor, 0);
+
         }
         System.out.println("Parsing completed.");
       }
