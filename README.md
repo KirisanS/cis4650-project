@@ -45,3 +45,14 @@ To print tokens from the scanner:
 ```
 java -cp build:java-cup-0.11b.jar Scanner < tests/scanner_tests/test_basic.cm
 ```
+
+---
+
+## Run the Symbol Table Tester
+
+To print tokens from the scanner:
+
+```
+java -cp build:java-cup-0.11b.jar SymbolTableManualTest
+```
+
