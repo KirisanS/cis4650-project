@@ -5,6 +5,19 @@ CP = .:$(CUPJAR)
 
 all: generated/parser.java generated/Lexer.java
 	mkdir -p build
+
+# NOTE
+# If you add new Java files to the project, place them inside:
+#   src/
+#   src/absyn/
+# These patterns automatically include them:
+#   src/*.java
+#   src/absyn/*.java
+# If you add files in a NEWLY made folder (for example src/semantics/),
+# you must add it to the list right below $(JAVAC) -cp $(CP) -d build \,
+#  and that folder would look like:
+#   src/semantics/*.java \
+
 	$(JAVAC) -cp $(CP) -d build \
 	src/absyn/*.java \
 	src/*.java \
