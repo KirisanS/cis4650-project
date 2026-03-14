@@ -56,7 +56,7 @@ dkms.conf
 
 # generated files
 *.class
-Lexer.java
-parser.java
-sym.java
+build/
+generated/
 output.txt
+*~

@@ -3,14 +3,22 @@ JFLEX = jflex
 CUPJAR = java-cup-0.11b.jar
 CP = .:$(CUPJAR)
 
-all: parser.java Lexer.java
-	$(JAVAC) -cp $(CP) absyn/*.java SemanticAnalyzer.java SymbolTable.java ShowTreeVisitor.java Lexer.java parser.java sym.java CM.java Scanner.java
+all: generated/parser.java generated/Lexer.java
+	mkdir -p build
+	$(JAVAC) -cp $(CP) -d build \
+	src/absyn/*.java \
+	src/*.java \
+	generated/*.java
 
-parser.java sym.java: parser.cup
-	java -jar $(CUPJAR) -parser parser -symbols sym parser.cup
+generated/parser.java generated/sym.java: grammar/parser.cup
+	mkdir -p generated
+	java -jar $(CUPJAR) -parser parser -symbols sym grammar/parser.cup
+	mv parser.java sym.java generated/
 
-Lexer.java: cminus.flex
-	$(JFLEX) cminus.flex
+generated/Lexer.java: grammar/cminus.flex
+	mkdir -p generated
+	$(JFLEX) grammar/cminus.flex
+	mv grammar/Lexer.java generated/
 
 clean:
-	rm -f Lexer.java parser.java sym.java *.class absyn/*.class *~
+	rm -rf build generated *~
