@@ -87,7 +87,7 @@ WHITESPACE  = [ \t\r\n]+
 
 <COMMENT>"*/"       {yybegin(YYINITIAL);}
 
-<COMMENT>(.|\n) {/* skip everything inside comment */}
+<COMMENT>([^]|\n) {/* skip everything inside comment */}
 
 "/"         {return symbol(sym.DIVIDE);}
 "~"         {return symbol(sym.NOT);}
