@@ -112,14 +112,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
             System.err.println("Error: Function Declaration for '" + exp.func + "' already exists within the current scope");
         }
         level++;
-        table.enterScope("the new function scope" + exp.func, level);
+        table.enterScope("the new function scope " + exp.func, level);
         if (exp.params != null) {
             exp.params.accept(this, level + 1);
         }
         if (exp.body != null)   {
             exp.body.accept(this, level + 1);
         }
-        table.exitScope("the function scope", level);
+        table.exitScope("the function scope " + exp.func, level);
     }
 
     public void visit(ArrayDec exp, int level) {
@@ -409,7 +409,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         }
 
         // the type of a[i] should be equal the same type result
-        exp.dtype = dec;
+        // exp.dtype = dec;
     }
 
     public void visit(ErrorExp exp, int level) {
