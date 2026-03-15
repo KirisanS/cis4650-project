@@ -74,6 +74,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         while (exp != null) {
             if (exp.head != null) {
                 exp.head.accept(this, level);
+                last = exp.head;
             }
             exp = exp.tail;
         }
@@ -282,18 +283,30 @@ public class SemanticAnalyzer implements AbsynVisitor {
         VarDecList params = func.params;
         ExpList args = exp.args;
 
+        // case where parameters and arguments both exist
+        // args != nulll -> needed for situations such as add(3,4, x + y)
         while (params != null && args != null) {
 
             args.head.accept(this, level);
 
-            int paramType = getType(params.head);
-            int argType = getType(args.head.dtype);
+            // x = add(y, 5); where y is undeclared
+            if (params.head != null && args.head.dtype != null) {
 
-            if (paramType != argType) {
-                System.err.println("Error: argument type mismatch in call to '" + exp.func + "'");
+                int paramType = getType(params.head);
+                int argType = getType(args.head.dtype);
+
+                if (paramType != argType) {
+                    System.err.println("Error: argument type mismatch in call to '" + exp.func + "'");
+                }
             }
 
             params = params.tail;
+            args = args.tail;
+        }
+
+        // case where there are too many arguments or too few arguments
+        while (args != null) {
+            args.head.accept(this, level);
             args = args.tail;
         }
 
@@ -396,7 +409,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         }
 
         // the type of a[i] should be equal the same type result
-        // exp.dtype = dec;
+        exp.dtype = dec;
     }
 
     public void visit(ErrorExp exp, int level) {
