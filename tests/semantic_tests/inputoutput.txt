@@ -1,0 +1,20 @@
+/* Test program for predefined input and output functions */
+
+int add(int a, int b) {
+    return a + b;
+}
+
+void main(void) {
+    int x;
+    int y;
+    int result;
+
+    x = input();        /* should return int */
+    y = input();        /* another call */
+
+    result = add(x, y); /* normal function call */
+
+    output(result);     /* output(int) */
+
+    output(5);          /* output constant */
+}
