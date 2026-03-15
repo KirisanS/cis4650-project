@@ -168,6 +168,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         if(decType == null) {
             System.err.println("Error: Variable in expression '" + name + "' has not been declared yet");
+            return; // stop further checks if variable is not declared
         }
 
         // int f(int a){return a;}
