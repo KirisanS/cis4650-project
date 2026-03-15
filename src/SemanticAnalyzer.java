@@ -271,36 +271,9 @@ public class SemanticAnalyzer implements AbsynVisitor {
                     System.err.println("Error: Right hand side must be an integer");
                 }
                 break;
-
-            case OpExp.EQ:
-            case OpExp.NOTEQUAL:
-            case OpExp.LESSTHAN:
-            case OpExp.GREATERTHAN:
-            case OpExp.LESSEQUAL:
-            case OpExp.GREATEQUAL:
-
-            if (leftType != rightType) {
-                System.err.println("Error: Comparison operands must be the same type");
-            }
-
-            exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
-            break;
-
-            //the same again
-            case OpExp.AND:
-            case OpExp.OR:
-
-            if (leftType != NameTy.INTEGER) {
-                System.err.println("Error: Left hand side must be an integer");
-            }
-            if (rightType != NameTy.INTEGER) {
-                System.err.println("Error: Right hand side must be an integer");
-            }
-
-            exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
-            break;
-
         }
+        // result of arithmetic operation is int
+        exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
     }
 
     public void visit(BoolExp exp, int level) {

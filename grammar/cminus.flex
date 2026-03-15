@@ -21,6 +21,8 @@ import java_cup.runtime.*;
 // Will switch to a CUP compatibility mode to interface with a CUP
 // generated parser.
 %cup
+
+%x COMMENT
    
 // Declarations
 
@@ -28,14 +30,14 @@ import java_cup.runtime.*;
 // line, will be copied letter to letter into the lexer class source.
 // Here you declare member variables and functions that are used inside
 // scanner actions.  
-%{ 
+%{
     private Symbol symbol(int type) {
         return new Symbol(type, yyline, yycolumn);
-    }
+   }
     
     private Symbol symbol(int type, Object value) {
         return new Symbol(type, yyline, yycolumn, value);
-    }
+   }
 
     // error handling
     private void lexicalError(String text) {
@@ -44,7 +46,7 @@ import java_cup.runtime.*;
             ", column " + (yycolumn + 1) +
             ": illegal character '" + text + "'"
         );
-    }
+   }
 %}
 
 LETTER = [a-zA-Z_]
@@ -52,7 +54,6 @@ DIGIT = [0-9]
 ID = {LETTER}({LETTER}|{DIGIT})*
 NUM = {DIGIT}+
 WHITESPACE  = [ \t\r\n]+
-COMMENT = "/*"([^*]|\*+[^*/])*\*+"/"
 
 %%
 // reserved words
@@ -82,7 +83,11 @@ COMMENT = "/*"([^*]|\*+[^*/])*\*+"/"
 // JFlex matches the longest possible rule
 // but it also prioritizes rule order for equal-length matches
 // so that's why comment rule  is above the single / rule
-{COMMENT}   {/* ignore comment */}
+"/*"                {yybegin(COMMENT);}
+
+<COMMENT>"*/"       {yybegin(YYINITIAL);}
+
+<COMMENT>([^]|\n) {/* skip everything inside comment */}
 
 "/"         {return symbol(sym.DIVIDE);}
 "~"         {return symbol(sym.NOT);}

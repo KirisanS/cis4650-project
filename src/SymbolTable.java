@@ -21,7 +21,7 @@ public class SymbolTable {
     public void enterScope(String scopeName, int level) {
         indent(level);
         currentLevel++;
-        System.out.println("Entering " + scopeName + ":");
+        System.out.println("Entering " + scopeName);
     }
 
     public void exitScope(String scopeName, int level) {

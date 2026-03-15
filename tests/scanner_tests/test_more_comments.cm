@@ -1,0 +1,39 @@
+/* test */
+x = 1;
+
+/*** stars ***/
+x = 2;
+
+/*
+multiline
+comment
+*/
+x = 3;
+
+/* weird comment * /
+x = 4;
+
+/***********/
+x = 5;
+
+/* *** *** *** */
+x = 6;
+
+/* * * * * * * */
+x = 7;
+
+/* comment *** more comment */
+x = 8;
+
+/*** hello ***/
+int x;
+
+/*
+multi
+line
+comment
+*/
+x = 9;
+
+/* * */
+x = 10;

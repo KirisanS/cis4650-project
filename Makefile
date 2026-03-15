@@ -35,3 +35,5 @@ generated/Lexer.java: grammar/cminus.flex
 
 clean:
 	rm -rf build generated *~
+
+a: clean all
