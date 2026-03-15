@@ -1,8 +1,6 @@
 import absyn.*;
 
 public class SemanticAnalyzer implements AbsynVisitor {
-
-
     SymbolTable table; 
     NameTy currentFunctionReturnType;
 
@@ -35,21 +33,53 @@ public class SemanticAnalyzer implements AbsynVisitor {
     // final static Dec dummyBool = new SimpleDec(0, 0,
     //     new NameTy(0, 0, NameTy.BOOL), "");
 
-
     final static int SPACES = 4;
 
+    // helpers
     private void indent(int level) {
         for( int i = 0; i < level * SPACES; i++ ) System.out.print( " " );
     }
 
+    // last declaration must be void main(void)
+    private void checkMain(Dec last) {
+        // int x; void main(void){} int y; -> BAD
+        if (!(last instanceof FunctionDec)) {
+            System.err.println("Error: last declaration must be void main(void)");
+            return;
+        }
+
+        FunctionDec f = (FunctionDec) last;
+
+        // is function name main: void start(void){} -> BAD
+        if (!f.func.equals("main")) {
+            System.err.println("Error: last declaration must be void main(void)");
+            return;
+        }
+
+        // is return type void: int main(void){} -> BAD
+        if (f.result.type != NameTy.VOID) {
+            System.err.println("Error: main must return void");
+        }
+
+        // params must be void
+        if (f.params != null) {
+            System.err.println("Error: main must have void parameters");
+        }
+    }
+
     /* LISTS */ 
     public void visit(DecList exp, int level) {
+        Dec last = null;
+
         while (exp != null) {
             if (exp.head != null) {
                 exp.head.accept(this, level);
             }
             exp = exp.tail;
         }
+
+        // after processing all declarations
+        checkMain(last);
     }
 
     public void visit(ExpList exp, int level) {
@@ -78,10 +108,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
         currentFunctionReturnType = exp.result;
 
         if(!(table.insert(exp.func, exp))) {
-            System.err.println("Error: Function Declaration for '" + exp.func + "' alreay exists within the current scope");
+            System.err.println("Error: Function Declaration for '" + exp.func + "' already exists within the current scope");
         }
         level++;
-        table.enterScope("the scope for function " + exp.func, level);
+        table.enterScope("the new function scope" + exp.func, level);
         if (exp.params != null) {
             exp.params.accept(this, level + 1);
         }
@@ -139,6 +169,19 @@ public class SemanticAnalyzer implements AbsynVisitor {
             System.err.println("Error: Variable in expression '" + name + "' has not been declared yet");
         }
 
+        // int f(int a){return a;}
+        // int x; x = f; -> BAD
+        if (decType instanceof FunctionDec) {
+            System.err.println("Error: function '" + name + "' used as variable");
+        }
+
+        // int a[10];
+        // int x;
+        // x = a; -> BAD
+        if (decType instanceof ArrayDec && exp.variable instanceof SimpleVar) {
+            System.err.println("Error: array '" + name + "' used without index");
+        }
+
         exp.dtype = decType;
 
     }
@@ -155,6 +198,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         exp.lhs.accept(this, level);
         exp.rhs.accept(this, level);
+
+        // lhs must be a variable
+        if (!(exp.lhs instanceof VarExp)) {
+            System.err.println("Error: left side of assignment must be variable");
+        }
 
         if (exp.lhs.dtype != null && exp.rhs.dtype != null) {
 
@@ -230,9 +278,27 @@ public class SemanticAnalyzer implements AbsynVisitor {
         // we won't get access to .params or .result
         FunctionDec func = (FunctionDec) dec;
 
-        // type check each argument
-        if (exp.args != null) {
-            exp.args.accept(this, level);
+        // check number of arguments and types of arguments
+        VarDecList params = func.params;
+        ExpList args = exp.args;
+
+        while (params != null && args != null) {
+
+            args.head.accept(this, level);
+
+            int paramType = getType(params.head);
+            int argType = getType(args.head.dtype);
+
+            if (paramType != argType) {
+                System.err.println("Error: argument type mismatch in call to '" + exp.func + "'");
+            }
+
+            params = params.tail;
+            args = args.tail;
+        }
+
+        if (params != null || args != null) {
+            System.err.println("Error: wrong number of arguments in call to '" + exp.func + "'");
         }
 
         // add(3,4) returns int, so the call expression has type int
