@@ -4,10 +4,30 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
 
     SymbolTable table; 
+    NameTy currentFunctionReturnType;
 
     public SemanticAnalyzer() {
         table = new SymbolTable();
-        table.enterScope("the global scope", 0);
+        table.enterScope("global scope", 0);
+
+        // predefined function: int input(void)
+        // return type int, params none
+        FunctionDec inputFunc =
+            new FunctionDec(0,0,new NameTy(0,0,NameTy.INTEGER),"input",null,null);
+
+        table.insert("input", inputFunc);
+
+        // predefined function: void output(int x)
+        // return type void, params int
+        SimpleDec param =
+            new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"x");
+
+        VarDecList params = new VarDecList(param,null); // can have multiple params
+
+        FunctionDec outputFunc =
+            new FunctionDec(0,0,new NameTy(0,0,NameTy.VOID),"output",params,null);
+
+        table.insert("output", outputFunc);
     }
 
     // final static Dec dummyInt = new SimpleDec(0, 0,
@@ -53,6 +73,9 @@ public class SemanticAnalyzer implements AbsynVisitor {
     /* Declarations */
 
     public void visit(FunctionDec exp, int level) {
+
+        // store the return type of this function
+        currentFunctionReturnType = exp.result;
 
         if(!(table.insert(exp.func, exp))) {
             System.err.println("Error: Function Declaration for '" + exp.func + "' alreay exists within the current scope");
@@ -103,6 +126,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         String name = null;
 
+        // var can be SimpleVar or IndexVar so cast accordingly
         if (exp.variable instanceof IndexVar) {
             name = ((IndexVar) exp.variable).name;
         } else if (exp.variable instanceof SimpleVar) {
@@ -174,7 +198,8 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 }
                 break;
         }
-
+        // result of arithmetic operation is int
+        exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
     }
 
     public void visit(BoolExp exp, int level) {
@@ -182,18 +207,47 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
 
     public void visit(CallExp exp, int level) {
-        
+        // are CALLING the function
+        // x = add(3, 4);
+        // exp.func = add
+        // exp.args = 3, 4
+
+        // what exactly is function declared as
+        Dec dec = table.lookup(exp.func);
+
+        // triggers when calling a function that isn't declared
+        if (dec == null) {
+            System.err.println("Error: function '" + exp.func + "' not declared");
+            return;
+        }
+
+        if (!(dec instanceof FunctionDec)) {
+            System.err.println("Error: '" + exp.func + "' is not a function");
+            return;
+        }
+
+        // compiler sees dec as Dec, yes FunctionDec extends Dec but
+        // we won't get access to .params or .result
+        FunctionDec func = (FunctionDec) dec;
+
+        // type check each argument
+        if (exp.args != null) {
+            exp.args.accept(this, level);
+        }
+
+        // add(3,4) returns int, so the call expression has type int
+        exp.dtype = new SimpleDec(0, 0, func.result, "");
     }
 
     public void visit(CompoundExp exp, int level) {
-
+        table.enterScope("the new block", level);
         if (exp.decs != null) {
             exp.decs.accept(this, level);
         }
         if (exp.exps != null) {
             exp.exps.accept(this, level);
         }
-        
+        table.exitScope("the block", level);
     }
 
     public void visit(IfExp exp, int level) {
@@ -213,7 +267,31 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
 
     public void visit(ReturnExp exp, int level) {
-        
+        // return 5;
+        // exp.exp =
+
+        // return can be expression: return x + 5; -> needs to be checked
+        if (exp.exp != null) {
+            exp.exp.accept(this, level);
+        }
+
+        // or just a plain return;
+        if (exp.exp == null) {
+            if (currentFunctionReturnType.type != NameTy.VOID) {
+                System.err.println("Error: return without value in non-void function");
+            }
+            return;
+        }
+
+        if (exp.exp != null && exp.exp.dtype != null) {
+            // what type is returned from the return call
+            int returnType = getType(exp.exp.dtype);
+
+            // compare with what function header claims
+            if (returnType != currentFunctionReturnType.type) {
+                System.err.println("Error: return type mismatch");
+            }
+        }
     }
 
     public void visit(WhileExp exp, int level) {
@@ -221,7 +299,38 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
 
     public void visit(IndexVar exp, int level) {
-        
+        // x = a[2];
+        // exp.name = "a"
+        // exp.index = 2
+
+        // what is the array declared as - arraydec, simpledec, functiondec
+        Dec dec = table.lookup(exp.name);
+
+        if (dec == null) {
+            System.err.println("Error: array '" + exp.name + "' not declared");
+            return;
+        }
+
+        if (!(dec instanceof ArrayDec)) {
+            System.err.println("Error: '" + exp.name + "' is not an array");
+        }
+
+        // index itself can be an expression: a[y + 2], so run semantic analysis
+        if (exp.index != null) {
+            exp.index.accept(this, level);
+        }
+
+        if (exp.index != null && exp.index.dtype != null) {
+            int indexType = getType(exp.index.dtype);
+
+            // is the index an integer: bool b; a[b]; -> BAD
+            if (indexType != NameTy.INTEGER) {
+                System.err.println("Error: array index must be integer");
+            }
+        }
+
+        // the type of a[i] should be equal the same type result
+        // exp.dtype = dec;
     }
 
     public void visit(ErrorExp exp, int level) {
