@@ -32,33 +32,31 @@ class CM {
         //parses the file
         parser p = new parser(new Lexer(new FileReader(filename)));
         Absyn result = (Absyn)(p.parse().value);
+        //displays syntax tree and semantic analysis
         if (saveSymbolsAndTree && result != null) {
           System.out.println("The abstract syntax tree is:");
           AbsynVisitor visitor = new ShowTreeVisitor();
           result.accept(visitor, 0);
-
+          
           SemanticAnalyzer visitor2 = new SemanticAnalyzer();
           result.accept(visitor2, 0);
           visitor2.table.exitScope("global scope", 0);
+          System.out.println("Parsing completed.");
+      
         }
-        if (saveTree && result != null) {
+        //displays syntax tree 
+        else if (saveTree && result != null) {
           System.out.println("The abstract syntax tree is:");
           AbsynVisitor visitor = new ShowTreeVisitor();
           result.accept(visitor, 0);
-
-        }
-        System.out.println("Parsing completed.");
+          System.out.println("Parsing completed.");
       
-      // else {
-      //     System.out.println("Bad news: -a required to run syntax tree, no other arguments implemented");
-      // }
+        }
+        else {
+            System.out.println("Bad news: -s or -a required to run syntax tree and/or semantic analysis :(");
+        }
     } catch (Exception e) {
       e.printStackTrace();
     }
   }
 }
-
-
-// -s is both
-// -a is first one
-// if error give up
