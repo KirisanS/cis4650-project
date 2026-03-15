@@ -220,6 +220,30 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
     public void visit(OpExp exp, int level) {
 
+        if (exp.op == OpExp.UMINUS) {
+            if (exp.right != null) {
+                exp.right.accept(this, level);
+                if (exp.right.dtype != null && getType(exp.right.dtype) != NameTy.INTEGER) {
+                    System.err.println("Error: unary minus operand must be an integer");
+                }
+            }
+            exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.INTEGER), "");
+            return;
+        }
+
+        if (exp.op == OpExp.NOT) {
+            if (exp.right != null) {
+                exp.right.accept(this, level);
+                if (exp.right.dtype != null) {
+                    int t = getType(exp.right.dtype);
+                    if (t != NameTy.INTEGER && t != NameTy.BOOLEAN) {
+                        System.err.println("Error: NOT operand must be an integer or boolean");
+                    }
+                }
+            }
+            exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
+            return;
+        }
         if (exp.left != null) {
             exp.left.accept(this, level);
         }
@@ -259,7 +283,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 System.err.println("Error: Comparison operands must be the same type");
             }
 
-            exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
+            exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
             break;
 
             //the same again
@@ -273,14 +297,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 System.err.println("Error: Right hand side must be an integer");
             }
 
-            exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
+            exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
             break;
 
         }
     }
 
     public void visit(BoolExp exp, int level) {
-        exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOL), "");
+        exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
     }
 
     public void visit(CallExp exp, int level) {
@@ -360,8 +384,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
     public void visit(IfExp exp, int level) {
         if (exp.test != null) {
             exp.test.accept(this, level);
-            if (exp.test.dtype != null && getType(exp.test.dtype) != NameTy.INTEGER) {
-                System.err.println("Error: if condition must evaluate to an integer");
+            if (exp.test.dtype != null) {
+                int testType = getType(exp.test.dtype);
+                if (testType != NameTy.INTEGER && testType != NameTy.BOOLEAN) {
+                    System.err.println("Error: if condition has to evaluate to an integer or a boolean");
+                }
             }
         }
 
@@ -421,11 +448,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
     public void visit(WhileExp exp, int level) {
         if (exp.test != null) {
             exp.test.accept(this, level);
-            
-            if (exp.test.dtype != null && getType(exp.test.dtype) != NameTy.INTEGER) {
+            if (exp.test.dtype != null) {
                 int testType = getType(exp.test.dtype);
-                if (testType != NameTy.INTEGER) {
-                    System.err.println("Error: while condition must evaluate to an integer");
+                if (testType != NameTy.INTEGER && testType != NameTy.BOOLEAN) {
+                    System.err.println("Error: while condition has to evaluate to an integer or boolean");
                 }
             }
         }
