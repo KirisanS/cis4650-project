@@ -1,0 +1,21 @@
+Entering global scope
+    Entering the new function scope main
+        Entering the new block
+        Entering the new block
+        Leaving the block
+            x: int
+            y: int
+            sum: bool
+        Leaving the block
+    Leaving the function scope main
+    Entering the new function scope multiply
+        Entering the new block
+        Leaving the block
+        a: int
+        b: int
+    Leaving the function scope multiply
+    output: (int) -> void
+    input: () -> int
+    main: () -> void
+    multiply: (int, int) -> int
+Leaving global scope

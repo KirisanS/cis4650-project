@@ -1,0 +1,34 @@
+/* Test 2
+
+Error 1: On line 24, variable 'z' has not been declared in the current scope. 
+Error 2: On line 28, LHS is a boolean, while the call expression to multiply() returns an integer. 
+Error 3: On line 12, void main() is not the final function in the global scope. 
+
+*/ 
+
+int multiply(int a, int b);
+
+/* void main should be the last function declared in the program */
+void main(void) {
+
+  int x; 
+  int y;
+  bool sum;
+
+  x = 20;
+  y = 10;
+
+  if(x > y) {
+
+    /* variable z has not been declared*/
+    z = 0; 
+  }
+
+  /* Mismatch of types bool = int */
+  sum = multiply(x, y);
+
+}
+
+int multiply(int a, int b) {
+  return a * b;
+}

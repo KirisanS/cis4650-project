@@ -1,0 +1,21 @@
+Entering global scope
+    Entering the new function scope cardValue
+        Entering the new block
+            value: bool
+        Leaving the block
+        year: int
+        card: int
+    Leaving the function scope cardValue
+    Entering the new function scope main
+        Entering the new block
+            amount: bool
+            year: int
+            value: int
+            card: int
+        Leaving the block
+    Leaving the function scope main
+    output: (int) -> void
+    input: () -> int
+    main: () -> void
+    cardValue: (int, int) -> int
+Leaving global scope

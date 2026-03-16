@@ -1,0 +1,46 @@
+The abstract syntax tree is:
+FunctionDec: add
+    Return Type: 
+        NameTy: Integer
+    SimpleDec: a
+        NameTy: Integer
+    SimpleDec: b
+        NameTy: Integer
+    Body: 
+        CompoundExp: 
+            ReturnExp: 
+                OpExp: + 
+                    VarExp: 
+                        SimpleVar: a
+                    VarExp: 
+                        SimpleVar: b
+FunctionDec: main
+    Return Type: 
+        NameTy: Void
+    Body: 
+        CompoundExp: 
+            SimpleDec: x
+                NameTy: Integer
+            AssignExp: 
+                VarExp: 
+                    SimpleVar: x
+                CallExp: add
+                    IntExp: 4
+                    IntExp: 3
+Entering global scope
+    Entering the new function scope add
+        Entering the new block
+        Leaving the block
+        a: int
+        b: int
+    Leaving the function scope add
+    Entering the new function scope main
+        Entering the new block
+            x: int
+        Leaving the block
+    Leaving the function scope main
+    output: (int) -> void
+    add: (int, int) -> int
+    input: () -> int
+    main: () -> void
+Leaving global scope

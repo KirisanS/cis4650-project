@@ -1,0 +1,10 @@
+The abstract syntax tree is:
+FunctionDec: main
+    Return Type: 
+        NameTy: Void
+    Body: 
+        CompoundExp: 
+            [Error Declaration Occured]
+            SimpleDec: y
+                NameTy: Integer
+            [Error Declaration Occured]

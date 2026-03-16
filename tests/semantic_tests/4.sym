@@ -1,0 +1,20 @@
+Entering global scope
+    Entering the new function scope computeSomething
+        Entering the new block
+        Leaving the block
+        x: int
+    Leaving the function scope computeSomething
+    Entering the new function scope main
+        Entering the new block
+        Entering the new block
+            z: int
+        Leaving the block
+            x: int
+            y: int
+        Leaving the block
+    Leaving the function scope main
+    output: (int) -> void
+    input: () -> int
+    main: () -> void
+    computeSomething: (int) -> int
+Leaving global scope

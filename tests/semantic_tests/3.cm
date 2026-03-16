@@ -1,0 +1,35 @@
+/* Test 3
+
+Error 1: On line 15, function is of type int but returns a boolean value
+Error 2: On line 29, function requires two integer values, but an integer and boolean is passed
+Error 3: On Line 32, Invalid amount of arguments provided in the function call
+
+*/ 
+
+
+int cardValue(int card, int year) {
+    bool value;
+    card = year * 1000; 
+
+    /* Mismatch return type, returning bool instead of integer */
+    return value;
+}
+
+void main(void) {
+
+    int card;
+    int year;
+    int value;
+    bool amount;
+
+    card = input();
+    year = input();
+
+    /* 2nd argument should be an integer, not a boolean*/
+    value = cardValue(card, amount);
+
+    /* Invalid amount of arguments */
+    value = cardValue(card);
+
+}
+

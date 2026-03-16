@@ -108,8 +108,26 @@ public class SemanticAnalyzer implements AbsynVisitor {
         // store the return type of this function
         currentFunctionReturnType = exp.result;
 
-        if(!(table.insert(exp.func, exp))) {
-            System.err.println("Error: Function Declaration for '" + exp.func + "' already exists within the current scope");
+        if(exp.body instanceof NilExp) {
+            if(!(table.insert(exp.func, exp))) {
+                System.err.println("Error: Function Prototype for '" + exp.func + "' already exists within the current scope");
+            }
+            return;
+        }
+
+        Dec existingPrototype = table.lookup(exp.func);
+
+        if (existingPrototype != null) {
+            if (existingPrototype instanceof FunctionDec && ((FunctionDec) existingPrototype).body instanceof NilExp) {
+                FunctionDec prototype = (FunctionDec) existingPrototype;
+                if (prototype.result.type != exp.result.type) {
+                    System.err.println("Error: Function '" + exp.func + "' return type doesn't match prototype");
+                }
+            } else {
+                System.err.println("Error: Function Declaration for '" + exp.func + "' already exists within the current scope");
+            }
+        } else {
+            table.insert(exp.func, exp);
         }
         level++;
         table.enterScope("the new function scope " + exp.func, level);
@@ -271,6 +289,35 @@ public class SemanticAnalyzer implements AbsynVisitor {
                     System.err.println("Error: Right hand side must be an integer");
                 }
                 break;
+
+            case OpExp.LESSTHAN:
+            case OpExp.GREATERTHAN:
+            case OpExp.LESSEQUAL:
+            case OpExp.GREATEQUAL:
+                if (leftType != NameTy.INTEGER) {
+                    System.err.println("Error: left hand side of comparison must be integer");
+                }
+                if (rightType != NameTy.INTEGER) {
+                    System.err.println("Error: right hand side of comparison must be integer");
+                }
+                exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
+                break;
+
+            case OpExp.EQ:
+            case OpExp.NOTEQUAL:
+                if (leftType != rightType)
+                    System.err.println("Error: both sides of equality must be the same type");
+                exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
+                break;
+
+            case OpExp.AND:
+            case OpExp.OR:
+                if (leftType != NameTy.BOOLEAN)
+                    System.err.println("Error: left hand side of logical op must be boolean");
+                if (rightType != NameTy.BOOLEAN)
+                    System.err.println("Error: right hand side of logical op must be boolean");
+                exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
+                break;
         }
         // result of arithmetic operation is int
         exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
@@ -400,7 +447,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         }
 
         // or just a plain return;
-        if (exp.exp == null) {
+        if (exp.exp == null || exp.exp instanceof NilExp) {
             if (currentFunctionReturnType.type != NameTy.VOID) {
                 System.err.println("Error: return without value in non-void function");
             }

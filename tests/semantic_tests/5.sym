@@ -1,0 +1,45 @@
+Entering global scope
+    Entering the new function scope checkType
+        Entering the new block
+        Entering the new block
+        Leaving the block
+            types: int
+            i: int
+            typeCount: int
+        Leaving the block
+        type: int
+    Leaving the function scope checkType
+    Entering the new function scope isEffective
+        Entering the new block
+        Entering the new block
+        Leaving the block
+            truth: int
+        Leaving the block
+        type2: int
+        type1: int
+    Leaving the function scope isEffective
+    Entering the new function scope pokemonCry
+        Entering the new block
+        Entering the new block
+        Leaving the block
+        Leaving the block
+        sound: int
+    Leaving the function scope pokemonCry
+    Entering the new function scope main
+        Entering the new block
+        Entering the new block
+        Entering the new block
+            yipppee: int
+        Leaving the block
+            isEevee: bool
+        Leaving the block
+            pokemon: int
+        Leaving the block
+    Leaving the function scope main
+    output: (int) -> void
+    checkType: (int) -> int
+    input: () -> int
+    pokemonCry: (int) -> void
+    main: () -> void
+    isEffective: (int, int) -> bool
+Leaving global scope

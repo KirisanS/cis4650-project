@@ -1,0 +1,38 @@
+/* Test 4
+
+Error 1: On line 29, the variable z is delcared within the while loop scope, and is then left 
+Error 2: On line 33, A function cannot be used as a variable unless it is called. 
+Error 3: On Line 33, The Expression must contain integers in each part of the expression. In this scenario, the LHS 'computeSomething' is not an integer  
+
+*/ 
+
+int computeSomething(int x) {
+    x = x + x;
+
+    return x;
+}
+
+
+void main(void) {
+
+    int x[5]; 
+
+    int y;
+    y = 10;
+
+    while (y < 10) {
+        int z;
+        z = 10;
+    }
+
+    /* We have left the scope of the while loop, so z is no longer within our symbol table */
+    z = computeSomething(y);
+
+    /* computeSomething is a function, not a proper variable. It must be called upon to work as an actual integer */
+    /* LHS of the expression (computeSomething + y) is not an integer */ 
+    y = computeSomething + y;
+
+}
+
+
+

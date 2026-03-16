@@ -1,0 +1,86 @@
+/* Test 5
+
+This file is a much large test case that includes multiple different errors. 
+
+Error 1: On Line 18, Duplicate variable declaration of 'i' 
+Error 2: On Line 21, Mismatch of types in assigning value to variable 
+Error 3: On Line 25, Assing a value to an array without indexing it
+Error 4: On Line 35, Returning void for a funciton that must return an integer 
+Error 5: On Line 42, Void declaration for a variable, changed to an integer
+Error 6: On Line 48, Invalid equality comparison between two different types
+Error 7: On Line 69, Function call to a function that is not in our symbol table 
+Error 8: On like 73, If conditional evaluates the void, when it should be an int or boolean value
+Error 9: On Line 84, Return type mismatch and main is a void function, but returns an integer.  
+
+*/ 
+
+int checkType(int type) {
+    int types[18];
+    int typeCount; 
+    int i;
+
+    /* Double Declaration of i */
+    int i;
+
+    /* Mismatch between assign expression */ 
+    typeCount = true;
+    typeCount = 18;
+
+    /* Trying to assign value without indexing array */
+    i = types;
+    i = 0;
+
+    while (typeCount > 0) {
+        types[i] = i;
+        i = i + 1;
+        typeCount = typeCount - 1;
+    }
+    
+    /* Void return when function is required to return an int */
+    return ;
+}
+
+bool isEffective(int type1, int type2) {
+
+    /* Void delcarations are not allowed for simple declarations, so it is converted to an integer declaration */
+    void truth;
+    truth = 1;
+
+
+    /* LHS and RHS are not the same type in equality comparison */ 
+    if(type1 == true) {
+        type2 = 5;
+        return false;
+    }
+
+    return true;
+}
+
+void pokemonCry(int sound) {
+    if (sound > 10) {
+        return ;
+    }
+    return ;
+}
+
+void main(void) {
+
+    int pokemon; 
+
+    /* Function call to a function that doesn't exist */
+    pokemon = getPokemonName(1);
+
+    /* If conditional evaluates to void, which is invalid for a conditional */
+    if(pokemonCry(pokemon)) {
+        bool isEevee;
+        isEevee = true;
+        while(isEevee == true) {
+            int yipppee;
+            yipppee = yipppee + 1;
+        }
+    }
+
+    /* Main returns void, but we return an integer */ 
+    return 5;
+
+}

@@ -1,0 +1,70 @@
+The abstract syntax tree is:
+FunctionDec: fakeFunction
+    Return Type: 
+        NameTy: Void
+    SimpleDec: x
+        NameTy: Integer
+    SimpleDec: y
+        NameTy: Integer
+    SimpleDec: z
+        NameTy: Integer
+    Body: 
+        CompoundExp: 
+            SimpleDec: y
+                NameTy: Integer
+            AssignExp: 
+                VarExp: 
+                    SimpleVar: x
+                OpExp: * 
+                    VarExp: 
+                        SimpleVar: y
+                    VarExp: 
+                        SimpleVar: z
+            IfExp: 
+                OpExp: > 
+                    VarExp: 
+                        SimpleVar: x
+                    IntExp: 5
+                CompoundExp: 
+                    AssignExp: 
+                        VarExp: 
+                            SimpleVar: y
+                        IntExp: 10
+                NilExp
+            ReturnExp: 
+                VarExp: 
+                    SimpleVar: x
+FunctionDec: main
+    Return Type: 
+        NameTy: Void
+    Body: 
+        CompoundExp: 
+            SimpleDec: x
+                NameTy: Integer
+            SimpleDec: y
+                NameTy: Integer
+            ArrayDec: z, Size: 5
+                NameTy: Integer
+            AssignExp: 
+                VarExp: 
+                    SimpleVar: x
+                IntExp: 5
+            AssignExp: 
+                VarExp: 
+                    SimpleVar: y
+                OpExp: + 
+                    IntExp: 5
+                    IntExp: 1
+            AssignExp: 
+                VarExp: 
+                    IndexVar: z
+                        IntExp: 1
+                IntExp: 0
+            CallExp: fakeFunction
+                VarExp: 
+                    IndexVar: z
+                        IntExp: 1
+                VarExp: 
+                    SimpleVar: y
+                VarExp: 
+                    SimpleVar: x
