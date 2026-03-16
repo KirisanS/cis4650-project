@@ -320,7 +320,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 break;
         }
         // result of arithmetic operation is int
-        exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
+        // exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
     }
 
     public void visit(BoolExp exp, int level) {

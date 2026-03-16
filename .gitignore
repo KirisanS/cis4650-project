@@ -61,3 +61,5 @@ generated/
 output.txt
 *~
 *.log
+*.abs
+*.sym
