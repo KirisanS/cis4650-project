@@ -61,7 +61,7 @@ class CM {
         ShowTreeVisitor visitor = new ShowTreeVisitor();
         result.accept(visitor, 0);
 
-        if (!visitor.errorOccured) {
+        if (p.valid) {
           SemanticAnalyzer visitor2 = new SemanticAnalyzer();
           result.accept(visitor2, 0);
           visitor2.table.exitScope("global scope", 0);
