@@ -1,3 +1,9 @@
+/* Test 1
+
+Test that will pass no matter
+
+*/
+
 int add(int a, int b) {
     return a + b;
 }
