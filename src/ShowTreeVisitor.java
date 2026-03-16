@@ -4,6 +4,8 @@ public class ShowTreeVisitor implements AbsynVisitor {
 
     final static int SPACES = 4;
 
+    public Boolean errorOccured = false;
+
     private void indent( int level ) {
         for( int i = 0; i < level * SPACES; i++ ) System.out.print( " " );
     }
@@ -243,16 +245,19 @@ public class ShowTreeVisitor implements AbsynVisitor {
     public void visit(ErrorExp exp, int level) {
         indent(level);
         System.out.println("[Error Expression Occured]");
+        errorOccured = true;
     }
 
     public void visit(ErrorDec exp, int level) {
         indent(level);
         System.out.println("[Error Declaration Occured]");
+        errorOccured = true;
     }
 
     public void visit(ErrorVar exp, int level) {
         indent(level);
         System.out.println("[Error Variable Occured]");
+        errorOccured = true;
     }
 
 

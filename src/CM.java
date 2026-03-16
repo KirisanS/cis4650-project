@@ -58,15 +58,19 @@ class CM {
         PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".sym"));
         System.setOut(outputFile);
         System.out.println("The abstract syntax tree is:");
-        AbsynVisitor visitor = new ShowTreeVisitor();
+        ShowTreeVisitor visitor = new ShowTreeVisitor();
         result.accept(visitor, 0);
-          
-        SemanticAnalyzer visitor2 = new SemanticAnalyzer();
-        result.accept(visitor2, 0);
-        visitor2.table.exitScope("global scope", 0);
-        outputFile.close();
-        System.setOut(console);
-        System.out.println("Syntax tree and Symbol table saved to " + baseFile + ".sym");
+
+        if (!visitor.errorOccured) {
+          SemanticAnalyzer visitor2 = new SemanticAnalyzer();
+          result.accept(visitor2, 0);
+          visitor2.table.exitScope("global scope", 0);
+          outputFile.close();
+          System.setOut(console);
+          System.out.println("Syntax tree and Symbol table saved to " + baseFile + ".sym");
+        } else {
+          System.err.println("Error Occured during Parsing. Exiting Semantic Analysis");
+        }
       }
       //displays syntax tree 
       else if (saveTree && result != null) {
