@@ -60,3 +60,4 @@ build/
 generated/
 output.txt
 *~
+*.log
