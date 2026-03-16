@@ -9,7 +9,7 @@ class CM {
     try {
       //used to determine what output we want to display
       boolean saveTree = false;
-      boolean saveSymbolsAndTree = false;
+      boolean saveSymbols= false;
       String inputFile = null;
       String baseFile = null;
 
@@ -19,7 +19,7 @@ class CM {
           saveTree = true;
         }
         else if(argv[n].equals("-s")){
-          saveSymbolsAndTree = true;
+          saveSymbols = true;
         }
         else {
           inputFile = argv[n];
@@ -31,8 +31,8 @@ class CM {
         return;
       }
 
-      if (!saveTree && !saveSymbolsAndTree) {
-        System.err.println("Error: -s or -a required to run syntax tree and/or semantic analysis :(");
+      if (!saveTree && !saveSymbols) {
+        System.err.println("Error: -a and/or -s required to run syntax tree and/or semantic analysis :(");
         return;
       }
 
@@ -53,27 +53,8 @@ class CM {
 
       PrintStream console = System.out;
         
-      //displays syntax tree and semantic analysis
-      if (saveSymbolsAndTree) {
-        PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".sym"));
-        System.setOut(outputFile);
-        System.out.println("The abstract syntax tree is:");
-        ShowTreeVisitor visitor = new ShowTreeVisitor();
-        result.accept(visitor, 0);
-
-        if (p.valid) {
-          SemanticAnalyzer visitor2 = new SemanticAnalyzer();
-          result.accept(visitor2, 0);
-          visitor2.table.exitScope("global scope", 0);
-          outputFile.close();
-          System.setOut(console);
-          System.out.println("Syntax tree and Symbol table saved to " + baseFile + ".sym");
-        } else {
-          System.err.println("Error Occured during Parsing. Exiting Semantic Analysis");
-        }
-      }
       //displays syntax tree 
-      else if (saveTree && result != null) {
+      if (saveTree && result != null) {
         PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".abs"));
         System.setOut(outputFile);
         System.out.println("The abstract syntax tree is:");
@@ -83,6 +64,26 @@ class CM {
         System.setOut(console);
         System.out.println("Syntax tree saved to " + baseFile + ".abs");
       
+      }
+      //saves symbol table to file if there are no syntax errors
+      if (saveSymbols) {
+
+        //System.out.println("The abstract syntax tree is:");
+        // ShowTreeVisitor visitor = new ShowTreeVisitor();
+        // result.accept(visitor, 0);
+
+        if (p.valid) {
+          PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".sym"));
+          System.setOut(outputFile);
+          SemanticAnalyzer visitor2 = new SemanticAnalyzer();
+          result.accept(visitor2, 0);
+          visitor2.table.exitScope("global scope", 0);
+          outputFile.close();
+          System.setOut(console);
+          System.out.println("Symbol table saved to " + baseFile + ".sym");
+        } else {
+          System.err.println("Error Occured during Parsing. Exiting Semantic Analysis");
+        }
       }
 
     } catch (Exception e) {
