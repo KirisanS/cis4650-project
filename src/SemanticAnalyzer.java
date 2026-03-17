@@ -288,6 +288,8 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 if(rightType != NameTy.INTEGER) {
                     System.err.println("Error: Right hand side must be an integer");
                 }
+                // result of arithmetic operation is int
+                exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
                 break;
 
             case OpExp.LESSTHAN:
@@ -319,8 +321,6 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
                 break;
         }
-        // result of arithmetic operation is int
-        // exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
     }
 
     public void visit(BoolExp exp, int level) {
@@ -511,6 +511,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 System.err.println("Error: array index must be integer");
             }
         }
+
+        // IndexVar does not store dtype
+        // type of a[i] is assigned in VarExp, which wraps this node
+        // thus no dtype assignment is needed here
 
         // the type of a[i] should be equal the same type result
         // exp.dtype = dec;
