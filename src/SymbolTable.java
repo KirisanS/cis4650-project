@@ -108,8 +108,11 @@ public class SymbolTable {
                 if (params.head instanceof SimpleDec) {
                     printType(((SimpleDec) params.head).typ);
                 } else if (params.head instanceof ArrayDec) {
-                    printType(((ArrayDec) params.head).typ); 
-                    System.out.print("[]");
+                    // printType(((ArrayDec) params.head).typ); 
+                    // System.out.print("[]");
+                    ArrayDec arr = (ArrayDec) dec;
+                    printType(arr.typ);
+                    System.out.print("[" + arr.size + "]");
                 } 
                 if (params.tail != null) {
                     System.out.print(", ");
@@ -119,7 +122,10 @@ public class SymbolTable {
             System.out.print(") -> ");
             printType(((FunctionDec) dec).result);
         } else if (dec instanceof ArrayDec) {
-            printType(((ArrayDec) dec).typ);
+            // printType(((ArrayDec) dec).typ);
+            ArrayDec arr = (ArrayDec) dec;
+            printType(arr.typ);
+            System.out.print("[" + arr.size + "]");
         } else if (dec instanceof SimpleDec) {
             printType(((SimpleDec) dec).typ);
         } else if (dec instanceof FunctionDec) {
