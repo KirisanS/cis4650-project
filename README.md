@@ -60,7 +60,7 @@ Notes:
 
 - Replace `1.cm` with any other test program in `tests/semantic_tests/`.
 - The -a flag generates an abstract syntax tree file (.abs) for the input program, which gets output to the `tests/semantic_tests` directory.
-- The -s flag generates a symbol table file (.sym) for the input program, which gets output to same `tests/semantic_tests`  directory.
+- The -s flag generates a symbol table file (.sym) for the input program, which gets output to the same `tests/semantic_tests`  directory.
 
 ---
 
@@ -78,8 +78,8 @@ java -cp build:java-cup-0.11b.jar Scanner < tests/scanner_tests/test_basic.cm
 
 The repository includes five semantic test programs found in `tests/semantic_tests`:
 
-1.cm - valid program with no semantic errors
-2.cm - program demonstrating 3 semantic errors
-3.cm - program demonstrating 3 semantic errors
-4.cm - program demonstrating 3 semantic errors
-5.cm - program with multiple semantic errors
+1. 1.cm - valid program with no semantic errors
+2. 2.cm - program demonstrating 3 semantic errors
+3. 3.cm - program demonstrating 3 semantic errors
+4. 4.cm - program demonstrating 3 semantic errors
+5. 5.cm - program with multiple semantic errors

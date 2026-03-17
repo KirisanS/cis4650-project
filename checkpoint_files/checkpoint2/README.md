@@ -78,8 +78,8 @@ java -cp build:java-cup-0.11b.jar Scanner < tests/scanner_tests/test_basic.cm
 
 The repository includes five semantic test programs found in `tests/semantic_tests`:
 
-1.cm - valid program with no semantic errors
-2.cm - program demonstrating 3 semantic errors
-3.cm - program demonstrating 3 semantic errors
-4.cm - program demonstrating 3 semantic errors
-5.cm - program with multiple semantic errors
+1. 1.cm - valid program with no semantic errors
+2. 2.cm - program demonstrating 3 semantic errors
+3. 3.cm - program demonstrating 3 semantic errors
+4. 4.cm - program demonstrating 3 semantic errors
+5. 5.cm - program with multiple semantic errors
