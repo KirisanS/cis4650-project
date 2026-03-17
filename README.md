@@ -59,8 +59,8 @@ java -cp build:java-cup-0.11b.jar CM -a -s tests/semantic_tests/1.cm
 Notes:
 
 - Replace `1.cm` with any other test program in `tests/semantic_tests/`.
-- The -a flag generates an abstract syntax tree file (.abs) for the input program in the `tests/semantic_tests` directory.
-- The -s flag generates a symbol table file (.sym) for the input program in the same `tests/semantic_tests`  directory.
+- The -a flag generates an abstract syntax tree file (.abs) for the input program, which gets output to the `tests/semantic_tests` directory.
+- The -s flag generates a symbol table file (.sym) for the input program, which gets output to same `tests/semantic_tests`  directory.
 
 ---
 
