@@ -193,6 +193,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         // int x; x = f; -> BAD
         if (decType instanceof FunctionDec) {
             System.err.println("Error: function '" + name + "' used as variable");
+            return;
         }
 
         // int a[10];
@@ -200,6 +201,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         // x = a; -> BAD
         if (decType instanceof ArrayDec && exp.variable instanceof SimpleVar) {
             System.err.println("Error: array '" + name + "' used without index");
+            return;
         }
 
         exp.dtype = decType;
@@ -430,7 +432,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     }
 
     public void visit(NilExp exp, int level) {
-        
+        // exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.VOID),"");
     }
 
     public void visit(NameTy exp, int level) {
