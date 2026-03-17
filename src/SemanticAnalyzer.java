@@ -67,6 +67,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
         }
     }
 
+    private void semanticError(int row, int col, String message) {
+        System.err.println(
+            "Error at line " + (row + 1) +
+            ", column " + (col + 1) +
+            ": " + message
+        );
+    }
+
     /* LISTS */ 
     public void visit(DecList exp, int level) {
         Dec last = null;
@@ -110,7 +118,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         if(exp.body instanceof NilExp) {
             if(!(table.insert(exp.func, exp))) {
-                System.err.println("Error: Function Prototype for '" + exp.func + "' already exists within the current scope");
+                semanticError(exp.row, exp.col,"Function Prototype for '" + exp.func + "' already exists within the current scope");
             }
             return;
         }
@@ -121,10 +129,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
             if (existingPrototype instanceof FunctionDec && ((FunctionDec) existingPrototype).body instanceof NilExp) {
                 FunctionDec prototype = (FunctionDec) existingPrototype;
                 if (prototype.result.type != exp.result.type) {
-                    System.err.println("Error: Function '" + exp.func + "' return type doesn't match prototype");
+                    semanticError(exp.row, exp.col,"Function '" + exp.func + "' return type doesn't match prototype");
                 }
             } else {
-                System.err.println("Error: Function Declaration for '" + exp.func + "' already exists within the current scope");
+                semanticError(exp.row, exp.col,"Function Declaration for '" + exp.func + "' already exists within the current scope");
             }
         } else {
             table.insert(exp.func, exp);
@@ -145,11 +153,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         // Void Check
         if(exp.typ.type == 2) {
-            System.err.println("Error: 'void' declaration encountered with '" + exp.name + "'. Changing declaration to 'int'. ");
+            semanticError(exp.row, exp.col,"'void' declaration encountered with '" + exp.name + "'. Changing declaration to 'int'. ");
             exp.typ.type = 0;
         }
         if(!(table.insert(exp.name, exp))) {
-            System.err.println("Error: Array Declaration for '" + exp.name + "' already exists within the current scope");
+            semanticError(exp.row, exp.col,"Array Declaration for '" + exp.name + "' already exists within the current scope");
         } else {
             level++;
         }
@@ -159,11 +167,11 @@ public class SemanticAnalyzer implements AbsynVisitor {
         //indent(level);
         // Void Check
         if(exp.typ.type == 2) {
-            System.err.println("Error: 'void' declaration encountered with '" + exp.name + "'. Changing declaration to 'int'. ");
+            semanticError(exp.row, exp.col,"'void' declaration encountered with '" + exp.name + "'. Changing declaration to 'int'. ");
             exp.typ.type = 0;
         }
         if(!(table.insert(exp.name, exp))) {
-            System.err.println("Error: Declaration for '" + exp.name + "' already exists within the current scope");
+            semanticError(exp.row, exp.col,"Declaration for '" + exp.name + "' already exists within the current scope");
         } else {
             level++;
         }
@@ -185,14 +193,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
         Dec decType = table.lookup(name);
 
         if(decType == null) {
-            System.err.println("Error: Variable in expression '" + name + "' has not been declared yet");
+            semanticError(exp.row, exp.col,"Variable in expression '" + name + "' has not been declared yet");
             return; // stop further checks if variable is not declared
         }
 
         // int f(int a){return a;}
         // int x; x = f; -> BAD
         if (decType instanceof FunctionDec) {
-            System.err.println("Error: function '" + name + "' used as variable");
+            semanticError(exp.row, exp.col,"function '" + name + "' used as variable");
             return;
         }
 
@@ -200,7 +208,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         // int x;
         // x = a; -> BAD
         if (decType instanceof ArrayDec && exp.variable instanceof SimpleVar) {
-            System.err.println("Error: array '" + name + "' used without index");
+            semanticError(exp.row, exp.col,"array '" + name + "' used without index");
             return;
         }
 
@@ -223,7 +231,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         // lhs must be a variable
         if (!(exp.lhs instanceof VarExp)) {
-            System.err.println("Error: left side of assignment must be variable");
+            semanticError(exp.row, exp.col,"left side of assignment must be variable");
         }
 
         if (exp.lhs.dtype != null && exp.rhs.dtype != null) {
@@ -232,7 +240,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             int rhsType = getType(exp.rhs.dtype);
 
             if (!(lhsType == rhsType)) {
-                System.err.println("Error: Mismatch of types between lhs and rhs of Assign Exp");
+                semanticError(exp.row, exp.col,"Mismatch of types between lhs and rhs of Assign Exp");
             }
         }
         exp.dtype = exp.lhs.dtype;
@@ -244,7 +252,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             if (exp.right != null) {
                 exp.right.accept(this, level);
                 if (exp.right.dtype != null && getType(exp.right.dtype) != NameTy.INTEGER) {
-                    System.err.println("Error: unary minus operand must be an integer");
+                    semanticError(exp.row, exp.col,"unary minus operand must be an integer");
                 }
             }
             exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.INTEGER), "");
@@ -257,7 +265,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 if (exp.right.dtype != null) {
                     int t = getType(exp.right.dtype);
                     if (t != NameTy.INTEGER && t != NameTy.BOOLEAN) {
-                        System.err.println("Error: NOT operand must be an integer or boolean");
+                        semanticError(exp.row, exp.col,"NOT operand must be an integer or boolean");
                     }
                 }
             }
@@ -285,10 +293,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
             case OpExp.TIMES: 
             case OpExp.DIVIDE:
                 if(leftType != NameTy.INTEGER) {
-                    System.err.println("Error: Left hand side must be an integer");
+                    semanticError(exp.row, exp.col,"Left hand side must be an integer");
                 }
                 if(rightType != NameTy.INTEGER) {
-                    System.err.println("Error: Right hand side must be an integer");
+                    semanticError(exp.row, exp.col,"Right hand side must be an integer");
                 }
                 // result of arithmetic operation is int
                 exp.dtype = new SimpleDec(0,0,new NameTy(0,0,NameTy.INTEGER),"");
@@ -299,10 +307,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
             case OpExp.LESSEQUAL:
             case OpExp.GREATEQUAL:
                 if (leftType != NameTy.INTEGER) {
-                    System.err.println("Error: left hand side of comparison must be integer");
+                    semanticError(exp.row, exp.col,"left hand side of comparison must be integer");
                 }
                 if (rightType != NameTy.INTEGER) {
-                    System.err.println("Error: right hand side of comparison must be integer");
+                    semanticError(exp.row, exp.col,"right hand side of comparison must be integer");
                 }
                 exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
                 break;
@@ -310,16 +318,16 @@ public class SemanticAnalyzer implements AbsynVisitor {
             case OpExp.EQ:
             case OpExp.NOTEQUAL:
                 if (leftType != rightType)
-                    System.err.println("Error: both sides of equality must be the same type");
+                    semanticError(exp.row, exp.col,"both sides of equality must be the same type");
                 exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
                 break;
 
             case OpExp.AND:
             case OpExp.OR:
                 if (leftType != NameTy.BOOLEAN)
-                    System.err.println("Error: left hand side of logical op must be boolean");
+                    semanticError(exp.row, exp.col,"left hand side of logical op must be boolean");
                 if (rightType != NameTy.BOOLEAN)
-                    System.err.println("Error: right hand side of logical op must be boolean");
+                    semanticError(exp.row, exp.col,"right hand side of logical op must be boolean");
                 exp.dtype = new SimpleDec(0, 0, new NameTy(0, 0, NameTy.BOOLEAN), "");
                 break;
         }
@@ -340,12 +348,12 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         // triggers when calling a function that isn't declared
         if (dec == null) {
-            System.err.println("Error: function '" + exp.func + "' not declared");
+            semanticError(exp.row, exp.col,"function '" + exp.func + "' not declared");
             return;
         }
 
         if (!(dec instanceof FunctionDec)) {
-            System.err.println("Error: '" + exp.func + "' is not a function");
+            semanticError(exp.row, exp.col,"'" + exp.func + "' is not a function");
             return;
         }
 
@@ -370,7 +378,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 int argType = getType(args.head.dtype);
 
                 if (paramType != argType) {
-                    System.err.println("Error: argument type mismatch in call to '" + exp.func + "'");
+                    semanticError(exp.row, exp.col,"argument type mismatch in call to '" + exp.func + "'");
                 }
             }
 
@@ -385,7 +393,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         }
 
         if (params != null || args != null) {
-            System.err.println("Error: wrong number of arguments in call to '" + exp.func + "'");
+            semanticError(exp.row, exp.col,"wrong number of arguments in call to '" + exp.func + "'");
         }
 
         // add(3,4) returns int, so the call expression has type int
@@ -409,7 +417,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             if (exp.test.dtype != null) {
                 int testType = getType(exp.test.dtype);
                 if (testType != NameTy.INTEGER && testType != NameTy.BOOLEAN) {
-                    System.err.println("Error: if condition has to evaluate to an integer or a boolean");
+                    semanticError(exp.row, exp.col,"if condition has to evaluate to an integer or a boolean");
                 }
             }
         }
@@ -451,7 +459,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
         // or just a plain return;
         if (exp.exp == null || exp.exp instanceof NilExp) {
             if (currentFunctionReturnType.type != NameTy.VOID) {
-                System.err.println("Error: return without value in non-void function");
+                semanticError(exp.row, exp.col,"return without value in non-void function");
             }
             return;
         }
@@ -462,7 +470,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
             // compare with what function header claims
             if (returnType != currentFunctionReturnType.type) {
-                System.err.println("Error: return type mismatch");
+                semanticError(exp.row, exp.col,"return type mismatch");
             }
         }
     }
@@ -473,7 +481,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
             if (exp.test.dtype != null) {
                 int testType = getType(exp.test.dtype);
                 if (testType != NameTy.INTEGER && testType != NameTy.BOOLEAN) {
-                    System.err.println("Error: while condition has to evaluate to an integer or boolean");
+                    semanticError(exp.row, exp.col,"while condition has to evaluate to an integer or boolean");
                 }
             }
         }
@@ -492,12 +500,12 @@ public class SemanticAnalyzer implements AbsynVisitor {
         Dec dec = table.lookup(exp.name);
 
         if (dec == null) {
-            System.err.println("Error: array '" + exp.name + "' not declared");
+            semanticError(exp.row, exp.col,"array '" + exp.name + "' not declared");
             return;
         }
 
         if (!(dec instanceof ArrayDec)) {
-            System.err.println("Error: '" + exp.name + "' is not an array");
+            semanticError(exp.row, exp.col,"'" + exp.name + "' is not an array");
         }
 
         // index itself can be an expression: a[y + 2], so run semantic analysis
@@ -510,7 +518,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
             // is the index an integer: bool b; a[b]; -> BAD
             if (indexType != NameTy.INTEGER) {
-                System.err.println("Error: array index must be integer");
+                semanticError(exp.row, exp.col,"array index must be integer");
             }
         }
 
