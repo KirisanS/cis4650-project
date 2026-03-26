@@ -59,7 +59,7 @@ class CM {
         System.setOut(outputFile);
         System.out.println("The abstract syntax tree is:");
         AbsynVisitor visitor = new ShowTreeVisitor();
-        result.accept(visitor, 0);
+        result.accept(visitor, 0, false);
         outputFile.close();
         System.setOut(console);
         System.out.println("Syntax tree saved to " + baseFile + ".abs");
@@ -76,13 +76,13 @@ class CM {
           PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".sym"));
           System.setOut(outputFile);
           SemanticAnalyzer visitor2 = new SemanticAnalyzer();
-          result.accept(visitor2, 0);
+          result.accept(visitor2, 0, false);
           visitor2.table.exitScope("global scope", 0);
           outputFile.close();
           System.setOut(console);
           System.out.println("Symbol table saved to " + baseFile + ".sym");
         } else {
-          System.err.println("Error Occured during Parsing. Exiting Semantic Analysis");
+          System.err.println("Error occurred during Parsing. Exiting Semantic Analysis");
         }
       }
 

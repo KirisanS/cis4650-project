@@ -35,5 +35,8 @@ generated/Lexer.java: grammar/cminus.flex
 
 clean:
 	rm -rf build generated *~
+	find . -name "*.abs" -delete
+	find . -name "*.sym" -delete
+	find . -name "*.tm" -delete
 
 a: clean all
