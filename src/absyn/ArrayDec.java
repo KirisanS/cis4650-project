@@ -6,6 +6,10 @@ public class ArrayDec extends VarDec {
     public String name;
     public int size;
 
+    // checkpoint 3
+    public int nestLevel;
+    public int offset;
+
     public ArrayDec(int row, int col, NameTy typ, String name, int size) {
         this.row = row;
         this.col = col;
