@@ -1,0 +1,86 @@
+/*
+  all_error_types.cm
+  A single larger C-minus test file containing the major semantic/type errors
+  from the provided test files, combined into one program.
+
+  Included error categories:
+  1. Symbol table / declaration errors
+     - redefined variable in same scope
+     - undefined variable use
+  2. Array index errors
+     - non-int index
+     - void-valued index
+  3. Assignment / operator expression errors
+     - mismatched assignment types
+     - invalid binary operands
+  4. Function definition / call / return errors
+     - returning a value from a void function
+     - unmatched parameter count
+     - unmatched parameter type
+  5. Test condition errors
+     - void used as condition in while / if
+*/
+
+void foo(void) {
+  bool t;
+  return t;            /* ERROR: returning bool from void function */
+}
+
+int gcd(int u, int v) {
+  if (v == 0) return u;
+  else return gcd(v, u - u / v * v);
+}
+
+int fun(int fff) {
+  int x;
+  int y;
+
+  x = x * 2 + 1;       /* OK arithmetic expression */
+  y = x + foo();       /* ERROR: foo() is void, invalid operand in + */
+
+  return y;
+}
+
+void main(void) {
+  int x;
+  bool y;
+  int a[5];
+  bool z;
+  int fac;
+  bool x;              /* ERROR: redefined x in same scope */
+
+  x = 10;
+  fac = 1;
+
+  temp = 15;           /* ERROR: temp is undefined */
+
+  y = x;               /* ERROR: assigning int to bool */
+  y = gcd(x, 5);       /* ERROR: assigning int to bool */
+  x = x + y;           /* ERROR: int + bool */
+  x = x + y * 10;      /* ERROR: bool * int, may propagate upward */
+  x = foo();           /* ERROR: assigning void to int */
+
+  a[z] = 10;           /* ERROR: bool index, array index must be int */
+  a[foo()] = 15;       /* ERROR: void index, array index must be int */
+
+  x = gcd(x);          /* ERROR: unmatched number of parameters */
+  x = gcd(x, foo());   /* ERROR: second parameter type mismatches (void) */
+
+  while (foo()) {      /* ERROR: void used as test condition */
+    fac = fac * x;
+    x = x - 1;
+  }
+
+  if (foo()) {         /* ERROR: void used as test condition */
+    output(x);
+  } else {
+    output(fac);
+  }
+
+  {
+    int blockVar;
+    blockVar = 2;      /* nested block included for scope entry/exit testing */
+  }
+
+  return x;            /* ERROR: returning int from void main */
+}

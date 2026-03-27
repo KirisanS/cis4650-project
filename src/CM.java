@@ -10,6 +10,7 @@ class CM {
       //used to determine what output we want to display
       boolean saveTree = false;
       boolean saveSymbols= false;
+      boolean saveCode = false;
       String inputFile = null;
       String baseFile = null;
 
@@ -21,6 +22,9 @@ class CM {
         else if(argv[n].equals("-s")){
           saveSymbols = true;
         }
+        else if(argv[n].equals("-c")) {
+          saveCode = true;
+        }
         else {
           inputFile = argv[n];
         }
@@ -31,8 +35,8 @@ class CM {
         return;
       }
 
-      if (!saveTree && !saveSymbols) {
-        System.err.println("Error: -a and/or -s required to run syntax tree and/or semantic analysis :(");
+      if (!saveTree && !saveSymbols && !saveCode) {
+        System.err.println("Error: -a, -s, or -c is required to run syntax tree, semantic analyzer, or code generation :(");
         return;
       }
 
@@ -83,6 +87,20 @@ class CM {
           System.out.println("Symbol table saved to " + baseFile + ".sym");
         } else {
           System.err.println("Error occurred during Parsing. Exiting Semantic Analysis");
+        }
+      }
+
+      if(saveCode) {
+        if (p.valid) {
+          PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".tm"));
+          System.setOut(outputFile);
+          CodeGenerator visitor = new CodeGenerator();
+          result.accept(visitor, 0, false);
+          outputFile.close();
+          System.setOut(console);
+          System.out.println("Code saved to " + baseFile + ".tm");
+        } else {
+          System.err.println("Error occurred during Parsing. Exiting Code Generation");
         }
       }
 
