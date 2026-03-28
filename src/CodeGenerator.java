@@ -1,13 +1,65 @@
 import absyn.*;
 
 public class CodeGenerator implements AbsynVisitor {
-    int mainEntry, globalOffset;
+    int mainEntry, globalOffset, frameOffset = 0;
+    public String fileName = "";
 
     int tempCount = 0;
+    int emitLoc = 0;
+    int highEmitLoc = 0;
+
+    // Special Registers 
+    int pc = 7;
+    int gp = 6;
+    int fp = 5;
+    int ac = 0;
+    int ac1 = 1;
+
     // stub
 
-    public void visit(Absyn trees) {
+    public CodeGenerator(String fileName) {
+        this.fileName = fileName;
+    }
 
+    public void visit(Absyn trees) {
+        // Header
+        emitComment("C-Minus Compilation to TM Code");
+        emitComment("File: %s".formatted(fileName));
+        
+        // Prelude Generation
+        emitComment("Standard prelude: ");
+
+        emitRM("LD", gp, 0, ac, "load gp with maxaddress");
+        emitRM("LDA", fp, 0, gp, "copy gp to fp");
+        emitRM("ST", ac, 0, ac, "clear location 0");
+
+        int savedLoc = emitSkip(1);
+
+        emitComment("Jump around i/o routines here");
+        emitComment("code for input routine");
+
+        emitRM("ST", ac, -1, fp, "store return");
+        emitRM("IN", ac, 0, 0, "input");
+        emitRM("LD", pc, -1, fp, "return to caller");
+
+        emitComment("code for output routine");
+
+        emitRM("ST", ac, -1, fp, "store return");
+        emitRM("LD", ac, -2, fp, "load output value");
+        emitRO("OUT", ac, 0, 0, "output");
+        emitRM("LD", pc, -1, fp, "return to caller");
+
+        int savedLoc2 = emitSkip(0);
+        emitBackup(savedLoc);
+        emitRM_Abs("LDA", pc, savedLoc2, "jump around i/o code");
+        emitRestore();
+
+        emitComment("End of standard prelude");
+
+        // Enter Code Generation
+        ((DecList) trees).accept(this, 0, false);
+
+        // Generate Finale Later 
     }
 
     private String newTemp() {
@@ -15,8 +67,52 @@ public class CodeGenerator implements AbsynVisitor {
         return "t" + tempCount;
     }
 
-    public void emitCode(String text) {
-        System.out.println(text);
+    public void emitComment(String text) {
+        System.out.printf("* %s\n", text);
+    }
+
+    public void emitRO(String op, int r, int s, int t, String c) {
+        System.out.printf("%3d: %5s %d %d %d\t%s\n", emitLoc, op, r, s, t, c);
+        ++emitLoc;
+        if(highEmitLoc < emitLoc) {
+            highEmitLoc = emitLoc;
+        }
+    }
+
+    public void emitRM(String op, int r, int d, int s, String c) {
+        System.out.printf("%3d: %5s %d %d(%d)\t%s\n", emitLoc, op, r, d, s, c);
+        ++emitLoc;
+        if (highEmitLoc < emitLoc) {
+            highEmitLoc = emitLoc;
+        }
+    }
+
+    private void emitRM_Abs(String op, int r, int a, String c) {
+        System.out.printf("%3d: %5s %d %d(%d)\t%s\n", emitLoc, op, r, a - (emitLoc + 1), pc, c);
+        ++emitLoc;
+        if (highEmitLoc < emitLoc) {
+            highEmitLoc = emitLoc;
+        }
+    }
+
+    private int emitSkip(int distance) {
+        int i = emitLoc;
+        emitLoc += distance;
+        if (highEmitLoc < emitLoc) {
+            highEmitLoc = emitLoc;
+        }
+        return i;
+    }
+
+    private void emitBackup(int loc) {
+        if (loc > highEmitLoc) {
+            emitComment("BUG in emitBackup");
+        }
+        emitLoc = loc;
+    }
+
+    private void emitRestore() {
+        emitLoc = highEmitLoc;
     }
 
     /* LISTS */
@@ -49,119 +145,188 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     /* Declarations */ 
+
     public void visit(FunctionDec exp, int level, boolean isAddr) {
+        
+        emitComment("process function: " + exp.func);
+        emitComment("jump around function body here");
+
+        int savedLoc = emitSkip(1);
+
+        if(exp.func.equals("main")) {
+            mainEntry = emitLoc;
+            globalOffset = frameOffset;
+        }
+
+        emitRM("ST", ac, -1, fp, "save return address");
+        frameOffset = -2;
+
+        if (exp.params != null) {
+            exp.params.accept(this, level, false); 
+        }
+
         if(exp.body != null) {
             exp.body.accept(this, level, false);
         }
+
+        emitRM("LD", pc, -1, fp, "return to caller");
+
+        int savedLoc2 = emitSkip(0);
+        emitBackup(savedLoc);
+        emitRM_Abs("LDA", pc, savedLoc2, "jump around fn body");
+        emitRestore();
+
+        emitComment("<- function declaration");
     }
 
     public void visit(SimpleDec exp, int level, boolean isAddr) {
-
+        emitComment("processing local var: " + exp.name);
+        exp.offset = frameOffset;
+        frameOffset--;
     }
 
     public void visit(ArrayDec exp, int level, boolean isAddr) {
-
+        emitComment("processing local var: " + exp.name);
+        exp.offset = frameOffset;
+        frameOffset -= exp.size;
     }
 
     public void visit(AssignExp exp, int level, boolean isAddr) {
+        emitComment("-> op");
+
+        exp.lhs.accept(this, level, true);
+
+        // Pushing Left Side onto stack temporarily 
+        emitRM("ST", ac, frameOffset, fp, "op: push left");
 
         exp.rhs.accept(this, level, false);
-        exp.lhs.accept(this, level, false);
 
-        exp.temp = exp.lhs.temp;
+        // Load Left Side Back On 
+        emitRM("LD", ac1, frameOffset, fp, "op: load left");
+        
+        emitRM("ST", ac, 0, ac1, "assign: store value");
 
-        emitCode(exp.lhs.temp + "=" + exp.rhs.temp);
+        emitComment("<- op");
     }
 
     public void visit(OpExp exp, int level, boolean isAddr) {
+        emitComment("-> op");
 
         if (exp.left != null) {
             exp.left.accept(this, level, false);
         }
 
+        // Push LHS to stack
+        emitRM("ST", ac, frameOffset, fp, "op: push left");
+
         if (exp.right != null) {
             exp.right.accept(this, level, false);
         }
 
-        exp.temp = newTemp();
+        // Load LHS back in
+        emitRM("LD", ac1, frameOffset, fp, "op: load left");
 
-        if (exp.op == OpExp.UMINUS) {
-            emitCode(exp.temp + " = -" + exp.right.temp);
-        }
-
-        if (exp.op == OpExp.NOT) {
-            emitCode(exp.temp + " = !" + exp.right.temp);
-        }
-
-        String op = ""; 
         switch (exp.op) {
             case OpExp.PLUS:        
-                op = " + ";  
+                emitRO("ADD", ac, ac1, ac, "op +");
                 break;
             case OpExp.MINUS:       
-                op = " - ";  
+
                 break;
             case OpExp.TIMES:       
-                op = " * ";  
+
                 break;
             case OpExp.DIVIDE:      
-                op = " / ";  
+
                 break;
             case OpExp.LESSTHAN:    
-                op = " < ";  
+
                 break;
             case OpExp.GREATERTHAN: 
-                op = " > ";  
+
                 break;
             case OpExp.LESSEQUAL:   
-                op = " <= "; 
+
                 break;
             case OpExp.GREATEQUAL:  
-                op = " >= ";
+
                 break;
             case OpExp.EQ:          
-                op = " == "; 
+
                 break;
             case OpExp.NOTEQUAL:    
-                op = " != "; 
+
                 break;
             case OpExp.AND:         
-                op = " && "; 
+
                 break;
             case OpExp.OR:          
-                op = " || "; 
+
                 break;
         }
 
-        emitCode(exp.temp + " = " + exp.left.temp + op + exp.right.temp);
+        emitComment("<- op");
     }
 
     public void visit(VarExp exp, int level, boolean isAddr) {
 
-        
-        if (exp.variable instanceof IndexVar) {
+        if (exp.variable instanceof SimpleVar) {
+            SimpleVar var = (SimpleVar) exp.variable;
+            emitComment("-> id");
+            emitComment("looking up id: " + var.name);
+
+            VarDec dec = (VarDec) exp.dtype;
+            int offset  = dec.offset;
+            int register = (dec.nestLevel == 0) ? gp : fp;
+
+
+            if (isAddr) {
+                emitRM("LDA", ac, offset, register, "load id address");
+            } else {
+                emitRM("LD", ac, offset, register, "load id value");
+            }
+            emitComment("<- id");
+        } else if (exp.variable instanceof IndexVar) {
             IndexVar var = (IndexVar) exp.variable;
+            emitComment("-> id");
+            emitComment("looking up id: " + var.name);
+
+            VarDec dec = (VarDec) exp.dtype;
+            int offset  = dec.offset;
+            int register = (dec.nestLevel == 0) ? gp : fp;
+
             var.index.accept(this, level, false);
-            exp.temp = var.name + "[" + var.index.temp + "]";
-        } else if (exp.variable instanceof SimpleVar) {
-            exp.temp = ((SimpleVar) exp.variable).name;
-        } 
+
+            emitRM("LDA", ac1, offset, register, "load array address");
+            emitRO("ADD", ac, ac1, ac, "compute element address");
+
+            if (!isAddr) {
+                emitRM("LD", ac, 0, ac, "load element value");
+            }
+            emitComment("<- id");
+        }
     }
         
     public void visit(IntExp exp, int level, boolean isAddr) {
-        exp.temp = String.valueOf(exp.value);
+        emitComment("-> constant");
+        emitRM("LDC", ac, exp.value, 0, "load const");
+        emitComment("<- constant");
     }
 
     public void visit(BoolExp exp, int level, boolean isAddr) {
-        exp.temp = exp.value ? "1" : "0";
+        emitComment("-> constant");
+        emitRM("LDC", ac, exp.value ? 1 : 0, 0, "load bool const");
+        emitComment("<- constant");
     }
 
     public void visit(CompoundExp exp, int level, boolean isAddr) {
+        emitComment("-> compound statement");
         if (exp.decs != null) {
             exp.decs.accept(this, level, false);
         } if (exp.exps != null) {
             exp.exps.accept(this, level, false);
         }
+        emitComment("<- compound statement");
     }
 
     public void visit(IfExp exp, int level, boolean isAddr) { 

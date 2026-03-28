@@ -94,8 +94,9 @@ class CM {
         if (p.valid) {
           PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".tm"));
           System.setOut(outputFile);
-          CodeGenerator visitor = new CodeGenerator();
-          result.accept(visitor, 0, false);
+          CodeGenerator visitor = new CodeGenerator(inputFile);
+          visitor.visit(result);
+          //result.accept(visitor, 0, false);
           outputFile.close();
           System.setOut(console);
           System.out.println("Code saved to " + baseFile + ".tm");
