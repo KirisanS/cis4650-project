@@ -25,18 +25,18 @@
 * -> op
 * -> id
 * looking up id: x
- 13:   LDA 0 0(6)	load id address
+ 13:   LDA 0 -2(5)	load id address
 * <- id
  14:    ST 0 -4(5)	op: push left
 * -> op
 * -> id
 * looking up id: x
- 15:    LD 0 0(6)	load id value
+ 15:    LD 0 -2(5)	load id value
 * <- id
  16:    ST 0 -4(5)	op: push left
 * -> id
 * looking up id: y
- 17:    LD 0 0(6)	load id value
+ 17:    LD 0 -3(5)	load id value
 * <- id
  18:    LD 1 -4(5)	op: load left
  19:   ADD 0 1 0	op +
@@ -48,3 +48,10 @@
  22:    LD 7 -1(5)	return to caller
  11:   LDA 7 11(7)	jump around fn body
 * <- function declaration
+* Finale
+ 23:    ST 5 0(5)	push ofp
+ 24:   LDA 5 0(5)	push frame
+ 25:   LDA 0 1(7)	load ac with ret ptr
+ 26:   LDA 7 -15(7)	jump to main loc
+ 27:    LD 5 0(5)	pop frame
+ 28:  HALT 0 0(0)	
