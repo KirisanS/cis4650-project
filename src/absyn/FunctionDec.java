@@ -9,6 +9,7 @@ public class FunctionDec extends Dec {
 
     // checkpoint 3
     public int funaddr;
+    public int functionEntry;
 
     public FunctionDec(int row, int col, NameTy result, String func, VarDecList params, Exp body) {
         this.row = row;

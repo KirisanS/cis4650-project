@@ -1,7 +1,8 @@
 import absyn.*;
 
 public class CodeGenerator implements AbsynVisitor {
-    int mainEntry, globalOffset, frameOffset = 0;
+    int mainEntry = -1;
+    int globalOffset, frameOffset = 0;
     public String fileName = "";
 
     int tempCount = 0;
@@ -12,6 +13,9 @@ public class CodeGenerator implements AbsynVisitor {
     int ofpFO = 0;
     int refFO = -1;
     int initFO = -2;
+
+    int inputEntry = 4;
+    int outputEntry = 7;
 
     // Special Registers 
     int pc = 7;
@@ -44,7 +48,7 @@ public class CodeGenerator implements AbsynVisitor {
         emitComment("code for input routine");
 
         emitRM("ST", ac, -1, fp, "store return");
-        emitRM("IN", ac, 0, 0, "input");
+        emitRO("IN", ac, 0, 0, "input");
         emitRM("LD", pc, -1, fp, "return to caller");
 
         emitComment("code for output routine");
@@ -66,15 +70,18 @@ public class CodeGenerator implements AbsynVisitor {
 
         // Generate Finale Later 
 
-        emitComment("Finale");
-
-        emitRM("ST", fp, globalOffset+ofpFO, fp, "push ofp");
-        emitRM("LDA", fp, globalOffset, fp, "push frame");
-        emitRM("LDA", ac, 1, pc, "load ac with ret ptr");
-        emitRM_Abs("LDA", pc, mainEntry, "jump to main loc");
-        emitRM("LD", fp, ofpFO, fp, "pop frame");
-        emitRM("HALT", 0, 0, 0, "");
-
+        if(mainEntry == -1) {
+            System.err.println("Error: Main Not Found, Exiting Code Generation");
+        } else {
+            emitComment("Finale");
+            emitRM("ST", fp, globalOffset+ofpFO, fp, "push ofp");
+            emitRM("LDA", fp, globalOffset, fp, "push frame");
+            emitRM("LDA", ac, 1, pc, "load ac with ret ptr");
+            emitRM_Abs("LDA", pc, mainEntry, "jump to main loc");
+            emitRM("LD", fp, ofpFO, fp, "pop frame");
+            emitComment("End of execution.");
+            emitRO("HALT", 0, 0, 0, "");
+        }
 
     }
 
@@ -88,7 +95,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     public void emitRO(String op, int r, int s, int t, String c) {
-        System.out.printf("%3d: %5s %d %d %d\t%s\n", emitLoc, op, r, s, t, c);
+        System.out.printf("%3d: %5s %d,%d,%d\t%s\n", emitLoc, op, r, s, t, c);
         ++emitLoc;
         if(highEmitLoc < emitLoc) {
             highEmitLoc = emitLoc;
@@ -96,7 +103,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     public void emitRM(String op, int r, int d, int s, String c) {
-        System.out.printf("%3d: %5s %d %d(%d)\t%s\n", emitLoc, op, r, d, s, c);
+        System.out.printf("%3d: %5s %d,%d(%d)\t%s\n", emitLoc, op, r, d, s, c);
         ++emitLoc;
         if (highEmitLoc < emitLoc) {
             highEmitLoc = emitLoc;
@@ -104,7 +111,7 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     private void emitRM_Abs(String op, int r, int a, String c) {
-        System.out.printf("%3d: %5s %d %d(%d)\t%s\n", emitLoc, op, r, a - (emitLoc + 1), pc, c);
+        System.out.printf("%3d: %5s %d,%d(%d)\t%s\n", emitLoc, op, r, a - (emitLoc + 1), pc, c);
         ++emitLoc;
         if (highEmitLoc < emitLoc) {
             highEmitLoc = emitLoc;
@@ -168,6 +175,7 @@ public class CodeGenerator implements AbsynVisitor {
         emitComment("jump around function body here");
 
         int savedLoc = emitSkip(1);
+        exp.functionEntry = emitLoc;
 
         if(exp.func.equals("main")) {
             mainEntry = emitLoc;
@@ -204,7 +212,6 @@ public class CodeGenerator implements AbsynVisitor {
         exp.offset = frameOffset;
         exp.nestLevel = currentNestLevel;
         frameOffset--;
-        System.err.println("Offset after Declaration: " + frameOffset);
     }
 
     public void visit(ArrayDec exp, int level, boolean isAddr) {
@@ -212,8 +219,6 @@ public class CodeGenerator implements AbsynVisitor {
         exp.offset = frameOffset;
         exp.nestLevel = currentNestLevel;
         frameOffset -= exp.size + 1;
-
-        System.err.println("Offset after Declaration: " +  frameOffset);
     }
 
     public void visit(AssignExp exp, int level, boolean isAddr) {
@@ -221,16 +226,21 @@ public class CodeGenerator implements AbsynVisitor {
 
         exp.lhs.accept(this, level, true);
 
+        // Saving offset because RHS is nested and we need a new spot to put whatever RHS equates to
+        int tempOffset = frameOffset;
+        frameOffset--;
+
         // Pushing Left Side onto stack temporarily 
-        emitRM("ST", ac, frameOffset, fp, "op: push left");
+        emitRM("ST", ac, tempOffset, fp, "op: push left");
 
         exp.rhs.accept(this, level, false);
 
         // Load Left Side Back On 
-        emitRM("LD", ac1, frameOffset, fp, "op: load left");
+        emitRM("LD", ac1, tempOffset, fp, "op: load left");
         
         emitRM("ST", ac, 0, ac1, "assign: store value");
 
+        frameOffset++;
         emitComment("<- op");
     }
 
@@ -270,8 +280,8 @@ public class CodeGenerator implements AbsynVisitor {
                 emitRO("SUB", ac, ac1, ac, "op <");
                 emitRM("JLT", ac, 2, pc, "br if true");
                 // Otherwise we propogate the false case, and skip the final line
-                emitRM("LDC", ac, 0, 0 "false case");
-                emitRM("LDA", pc, 1, pc, "unconditional jump")
+                emitRM("LDC", ac, 0, 0, "false case");
+                emitRM("LDA", pc, 1, pc, "unconditional jump");
                 emitRM("LDC", ac, 1, 0, "true case");
                 break;
             case OpExp.GREATERTHAN: 
@@ -321,7 +331,6 @@ public class CodeGenerator implements AbsynVisitor {
 
                 break;
         }
-
         emitComment("<- op");
     }
 
@@ -392,16 +401,132 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     public void visit(IfExp exp, int level, boolean isAddr) { 
+        
+        emitComment("-> if");
+
+        if (exp.test != null) {
+            exp.test.accept(this, level, false);
+        }
+
+        // Save the location of where we might skip to if conditional is false
+        int savedLoc = emitSkip(1);
+
+        exp.thenpart.accept(this, level, false);
+
+        if(exp.elsepart != null && !(exp.elsepart instanceof NilExp)) {
+
+            // Skipping one to go over else block later
+            int savedLoc2 = emitSkip(1);
+
+            // We know where else starts now 
+            int elseLoc = emitSkip(0);
+            emitBackup(savedLoc);
+            emitRM_Abs("JEQ", ac, elseLoc, "jump to else block");
+            emitRestore();
+
+            exp.elsepart.accept(this, level, false);
+
+            // Jumping to after else 
+            int afterIfLoc = emitSkip(0);
+            emitBackup(savedLoc2);
+            emitRM_Abs("LDA", pc, afterIfLoc, "jump over else");
+            emitRestore();
+
+        } else {
+
+            int afterIfLoc = emitSkip(0);
+            emitBackup(savedLoc);
+            emitRM_Abs("JEQ", ac, afterIfLoc, "jump to end of if block");
+            emitRestore();
+        }
 
     }
     public void visit(WhileExp exp, int level, boolean isAddr) { 
+        
+        emitComment("-> while");
+        emitComment("while: jump after body comes back here");
 
+        int tempLoc = emitLoc;
+
+        if (exp.test != null) {
+            exp.test.accept(this, level, false);
+        }
+
+        // Save the location of where we might skip to if conditional is false
+        int savedLoc = emitSkip(1);
+        emitComment("while: jump to end belongs here");
+
+        if (exp.body != null) {
+            exp.body.accept(this, level, false);
+        }
+
+        // Jump back to the beginning of the while loop
+        emitRM_Abs("LDA", pc, tempLoc, "while: absolute jump to test");
+
+        // This is where while loop ends so we save this. 
+        int afterLoc = emitSkip(0);
+
+        // While Ends here, so we go back to beginning of loop  and fill in the jump location. 
+        emitBackup(savedLoc);
+        emitRM_Abs("JEQ", ac, afterLoc, "while: jump to end");
+
+        // and then go back to where we were to continue code generation as usual
+        emitRestore();
+
+        emitComment("<- while");
     }
-    public void visit(ReturnExp exp, int level, boolean isAddr) { 
+    public void visit(ReturnExp exp, int level, boolean isAddr) {
+
+        emitComment("-> return");
+
+        if (exp.exp != null) {
+            exp.exp.accept(this, level, false);
+        }
+
+        emitRM("LD", pc, refFO, fp, "return to caller");
+        emitComment("<- return");
+ 
 
     }
     public void visit(CallExp exp, int level, boolean isAddr) { 
 
+        emitComment("-> call of function: " + exp.func);
+
+        if (exp.args != null) {
+            ExpList arguments = exp.args;
+            int argOffset = frameOffset + initFO;
+
+            // Go through each argument and add them to stack
+            while(arguments != null) {
+                if(arguments.head != null) {
+                    arguments.head.accept(this, level, false);
+                    // This argOffset might be wrong, look into later
+// SOMEONE SEE THIS PLLLLLLLEEEEEEEEEEEEAAAAAAAAASSSSSSSSSEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+                    emitRM("ST", ac, argOffset, fp, "store arg val");
+                    argOffset--;
+                }
+                arguments = arguments.tail;
+            }
+        }
+
+        emitRM("ST", fp, frameOffset + ofpFO, fp, "push ofp");
+        emitRM("LDA", fp, frameOffset, fp, "push frame");
+
+        // Load the address of where we will return to after the jump 
+        emitRM("LDA", ac, 1, pc, "load ac with return pointer");
+
+        if(exp.func.equals("input")) {
+            emitRM_Abs("LDA", pc, inputEntry, "jump to input loc");
+        } else if (exp.func.equals("output")) {
+            emitRM_Abs("LDA", pc, outputEntry, "jump to output loc");
+        } else {
+            FunctionDec func = (FunctionDec) exp.dtype;
+            emitRM_Abs("LDA", pc, func.functionEntry, "jump to func loc");
+        }
+
+        emitRM("LD", fp, ofpFO, fp, "pop frame");
+
+        emitComment("<- call");
     }
     public void visit(NilExp exp, int level, boolean isAddr) { 
 
