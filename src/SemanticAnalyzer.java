@@ -4,9 +4,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
     SymbolTable table; 
     NameTy currentFunctionReturnType;
     final static int SPACES = 4;
+    boolean print;
 
-    public SemanticAnalyzer() {
-        table = new SymbolTable();
+    public SemanticAnalyzer(boolean print) {
+        table = new SymbolTable(print);
         table.enterScope("global scope", 0);
 
         // predefined function: int input(void)

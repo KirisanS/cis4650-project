@@ -79,7 +79,7 @@ class CM {
         if (p.valid) {
           PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".sym"));
           System.setOut(outputFile);
-          SemanticAnalyzer visitor2 = new SemanticAnalyzer();
+          SemanticAnalyzer visitor2 = new SemanticAnalyzer(true);
           result.accept(visitor2, 0, false);
           visitor2.table.exitScope("global scope", 0);
           outputFile.close();
@@ -92,13 +92,22 @@ class CM {
 
       if(saveCode) {
         if (p.valid) {
+          // first run semantic analysis
+          SemanticAnalyzer semantic = new SemanticAnalyzer(false);
+          result.accept(semantic, 0, false);
+
           PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".tm"));
           System.setOut(outputFile);
+
+          // then generate code
           CodeGenerator visitor = new CodeGenerator(inputFile);
+
           visitor.visit(result);
           //result.accept(visitor, 0, false);
+
           outputFile.close();
           System.setOut(console);
+
           System.out.println("Code saved to " + baseFile + ".tm");
         } else {
           System.err.println("Error occurred during Parsing. Exiting Code Generation");

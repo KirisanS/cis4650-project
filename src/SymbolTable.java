@@ -6,29 +6,30 @@ public class SymbolTable {
     private HashMap<String, ArrayList<NodeType>> table; 
     private int currentLevel;
     final static int SPACES = 4;
+    boolean print;
 
-    public SymbolTable() {
+    public SymbolTable(boolean print) {
         table = new HashMap<>();
         currentLevel = -1;
-
+        this.print = print;
     }
 
     private void indent(int level) {
-        for( int i = 0; i < level * SPACES; i++ ) System.out.print( " " );
+        for( int i = 0; i < level * SPACES; i++ ) if (print) System.out.print( " " );
     }
 
 
     public void enterScope(String scopeName, int level) {
         indent(level);
         currentLevel++;
-        System.out.println("Entering " + scopeName);
+        if (print) System.out.println("Entering " + scopeName);
     }
 
     public void exitScope(String scopeName, int level) {
         //print scope
         printCurrentScope(level);
         indent(level);
-        System.out.println("Leaving " + scopeName);
+        if (print) System.out.println("Leaving " + scopeName);
         deleteScope(currentLevel);
         currentLevel--;
     }
@@ -132,7 +133,7 @@ public class SymbolTable {
             printType(((FunctionDec) dec).result);
         }
 
-        System.out.println("");
+        if (print) System.out.println("");
     }
 
     private void printType(NameTy type) {
