@@ -1,0 +1,8 @@
+void stupid_print(int a, int b) {
+  output(a);
+  output(b);
+}
+
+void main(void) {
+  stupid_print(5, 10);
+}

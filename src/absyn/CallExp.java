@@ -5,6 +5,9 @@ public class CallExp extends Exp {
     public String func;
     public ExpList args;
 
+    // checkpoint 3
+    public FunctionDec funcDec;
+
     public CallExp(int row, int col, String func, ExpList args) {
         this.row = row;
         this.col = col;

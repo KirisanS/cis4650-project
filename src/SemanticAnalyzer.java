@@ -398,6 +398,9 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         // add(3,4) returns int, so the call expression has type int
         exp.dtype = new SimpleDec(0, 0, func.result, "");
+
+        // after fighting many demons this had to be added for checkpoint 3
+        exp.funcDec = func;
     }
 
     public void visit(CompoundExp exp, int level, boolean isAddr) {

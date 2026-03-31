@@ -182,7 +182,7 @@ public class CodeGenerator implements AbsynVisitor {
             globalOffset = frameOffset;
         }
 
-        emitRM("ST", ac, -1, fp, "save return address");
+        emitRM("ST", ac, refFO, fp, "save return address");
         frameOffset = initFO;
 
         currentNestLevel++;
@@ -197,7 +197,7 @@ public class CodeGenerator implements AbsynVisitor {
 
         currentNestLevel--;
 
-        emitRM("LD", pc, -1, fp, "return to caller");
+        emitRM("LD", pc, refFO, fp, "return to caller");
 
         int savedLoc2 = emitSkip(0);
         emitBackup(savedLoc);
@@ -253,13 +253,15 @@ public class CodeGenerator implements AbsynVisitor {
 
         // Push LHS onto stack 
         emitRM("ST", ac, frameOffset, fp, "op: push left");
+        frameOffset--;
 
         // Get RHS 
         if (exp.right != null) {
             exp.right.accept(this, level, false);
         }
 
-        // Load LHS back in onto the second ac1 register 
+        // Load LHS back in onto the second ac1 register
+        frameOffset++;
         emitRM("LD", ac1, frameOffset, fp, "op: load left");
 
         switch (exp.op) {
@@ -492,6 +494,14 @@ public class CodeGenerator implements AbsynVisitor {
 
         emitComment("-> call of function: " + exp.func);
 
+        // fix for casting problem
+        FunctionDec func = exp.funcDec;
+
+        // fix for nested calls
+        // callexp shouldnt change frameoffset permanently
+        // ie., allows output(add(2, add(3,4))); to happen properly
+        int savedOffset = frameOffset;
+
         if (exp.args != null) {
             ExpList arguments = exp.args;
             int argOffset = frameOffset + initFO;
@@ -500,8 +510,6 @@ public class CodeGenerator implements AbsynVisitor {
             while(arguments != null) {
                 if(arguments.head != null) {
                     arguments.head.accept(this, level, false);
-                    // This argOffset might be wrong, look into later
-// SOMEONE SEE THIS PLLLLLLLEEEEEEEEEEEEAAAAAAAAASSSSSSSSSEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
                     emitRM("ST", ac, argOffset, fp, "store arg val");
                     argOffset--;
                 }
@@ -520,11 +528,13 @@ public class CodeGenerator implements AbsynVisitor {
         } else if (exp.func.equals("output")) {
             emitRM_Abs("LDA", pc, outputEntry, "jump to output loc");
         } else {
-            FunctionDec func = (FunctionDec) exp.dtype;
+            // remove the cast line (gone now) because it's wrong
             emitRM_Abs("LDA", pc, func.functionEntry, "jump to func loc");
         }
 
         emitRM("LD", fp, ofpFO, fp, "pop frame");
+
+        frameOffset = savedOffset;
 
         emitComment("<- call");
     }

@@ -39,4 +39,15 @@ clean:
 	find . -name "*.sym" -delete
 	find . -name "*.tm" -delete
 
+# secret commands
+
 a: clean all
+
+super:
+	make clean
+	make
+	java -cp build:java-cup-0.11b.jar CM -c tests/code_tests/$(word 2,$(MAKECMDGOALS))
+	./TMSimulator/tm tests/code_tests/$(word 2,$(MAKECMDGOALS:.cm=.tm)) g
+
+%:
+	@:

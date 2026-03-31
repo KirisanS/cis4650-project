@@ -559,7 +559,7 @@ int doCommand (void)
 /********************************************/
 
 int main( int argc, char * argv[] )
-{ if (argc != 2)
+{ if (argc < 2 || argc > 3)
   { printf("usage: %s <filename>\n",argv[0]);
     exit(1);
   }
@@ -579,9 +579,48 @@ int main( int argc, char * argv[] )
   /* reset( input ); */
   /* read-eval-print */
   printf("TM  simulation (enter h for help)...\n");
-  do
-     done = ! doCommand ();
-  while (! done );
+  // do
+  //    done = ! doCommand ();
+  // while (! done );
+  char autoCmd = '\0';
+
+  if (argc == 3) {
+      autoCmd = argv[2][0];  // 'g', 's', etc.
+  }
+
+  /* run */
+  if (autoCmd != '\0') {
+
+      if (autoCmd == 'g') {
+          int stepResult = srOKAY;
+
+          while (stepResult == srOKAY) {
+              if (traceflag) writeInstruction(reg[PC_REG]);
+              stepResult = stepTM();
+          }
+
+          printf("%s\n", stepResultTab[stepResult]);
+
+          // 🔥 EXIT immediately after finishing
+          return 0;
+      }
+
+      else if (autoCmd == 's') {
+          stepTM();
+          return 0;
+      }
+
+      else {
+          printf("Unknown auto command\n");
+          return 1;
+      }
+
+  } else {
+      // normal interactive mode
+      do
+          done = ! doCommand();
+      while (!done);
+  }
   printf("Simulation done.\n");
   return 0;
 }

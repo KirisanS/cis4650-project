@@ -1,0 +1,8 @@
+void main(void) {
+  int x;
+
+  while (1) {
+    int y;
+    x = y;
+  }
+}
