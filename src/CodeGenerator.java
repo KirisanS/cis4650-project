@@ -408,12 +408,14 @@ public class CodeGenerator implements AbsynVisitor {
 
     public void visit(CompoundExp exp, int level, boolean isAddr) {
         emitComment("-> compound statement");
+        int savedFrameOffset = frameOffset;
         if (exp.decs != null) {
             exp.decs.accept(this, level, false);
         } if (exp.exps != null) {
             exp.exps.accept(this, level, false);
         }
         emitComment("<- compound statement");
+        frameOffset = savedFrameOffset;
     }
 
     public void visit(IfExp exp, int level, boolean isAddr) { 
@@ -521,9 +523,21 @@ public class CodeGenerator implements AbsynVisitor {
             int argOffset = frameOffset + initFO;
 
             // Go through each argument and add them to stack
-            while(arguments != null) {
-                if(arguments.head != null) {
-                    arguments.head.accept(this, level, false);
+            while (arguments != null) {
+                if (arguments.head != null) {
+                    
+                    if (arguments.head instanceof VarExp) {
+                        VarExp vexp = (VarExp) arguments.head;
+                        if (vexp.variable instanceof SimpleVar && 
+                            vexp.dtype instanceof ArrayDec) {
+                            
+                            vexp.accept(this, level, true);
+                        } else {
+                            arguments.head.accept(this, level, false);
+                        }
+                    } else {
+                        arguments.head.accept(this, level, false);
+                    }
                     emitRM("ST", ac, argOffset, fp, "store arg val");
                     argOffset--;
                 }
