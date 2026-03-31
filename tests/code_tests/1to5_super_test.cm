@@ -1,0 +1,38 @@
+int a[3];
+int x;
+
+int add(int a, int b) {
+  return a + b;
+}
+
+void main(void) {
+
+  /* nested calls */
+  output(add(2, add(3,4)));
+
+  /* arrays */
+  a[0] = 5;
+  output(a[0]);
+
+  /* control flow */
+  x = 3;
+  while (x > 0) {
+    output(x);
+    x = x - 1;
+  }
+
+  /* unary minus */
+  output(-5);
+  output(-(2 + 3));
+}
+
+/*
+we expect
+9
+5
+3
+2
+1
+-5
+-5
+*/
