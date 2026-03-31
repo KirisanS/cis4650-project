@@ -109,9 +109,7 @@ public class SymbolTable {
                 if (params.head instanceof SimpleDec) {
                     printType(((SimpleDec) params.head).typ);
                 } else if (params.head instanceof ArrayDec) {
-                    // printType(((ArrayDec) params.head).typ); 
-                    // System.out.print("[]");
-                    ArrayDec arr = (ArrayDec) dec;
+                    ArrayDec arr = (ArrayDec) params.head;
                     printType(arr.typ);
                     System.out.print("[" + arr.size + "]");
                 } 
