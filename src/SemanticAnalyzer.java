@@ -30,11 +30,6 @@ public class SemanticAnalyzer implements AbsynVisitor {
         table.insert("output", outputFunc);
     }
 
-    // final static Dec dummyInt = new SimpleDec(0, 0,
-    //     new NameTy(0, 0, NameTy.INT), "");
-    // final static Dec dummyBool = new SimpleDec(0, 0,
-    //     new NameTy(0, 0, NameTy.BOOL), "");
-
     // helpers
     private void indent(int level) {
         for( int i = 0; i < level * SPACES; i++ ) System.out.print( " " );
@@ -207,10 +202,10 @@ public class SemanticAnalyzer implements AbsynVisitor {
         // int a[10];
         // int x;
         // x = a; -> BAD
-        if (decType instanceof ArrayDec && exp.variable instanceof SimpleVar) {
-            semanticError(exp.row, exp.col,"array '" + name + "' used without index");
-            return;
-        }
+        // if (decType instanceof ArrayDec && exp.variable instanceof SimpleVar) {
+        //     semanticError(exp.row, exp.col,"array '" + name + "' used without index");
+        //     return;
+        // }
 
         exp.dtype = decType;
 
@@ -232,6 +227,15 @@ public class SemanticAnalyzer implements AbsynVisitor {
         // lhs must be a variable
         if (!(exp.lhs instanceof VarExp)) {
             semanticError(exp.row, exp.col,"left side of assignment must be variable");
+        }
+
+        if (exp.rhs instanceof VarExp) {
+            VarExp rhs = (VarExp) exp.rhs;
+            if (rhs.dtype instanceof ArrayDec && rhs.variable instanceof SimpleVar) {
+                SimpleVar tempVar = (SimpleVar) rhs.variable;
+                semanticError(exp.row, exp.col,"array '" + tempVar.name + "' used without index");
+                return;
+            }
         }
 
         if (exp.lhs.dtype != null && exp.rhs.dtype != null) {
