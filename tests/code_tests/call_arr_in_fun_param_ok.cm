@@ -1,4 +1,4 @@
-int minloc(int a, int low, int high) {
+int minloc(int a[], int low, int high) {
   return low;
 }
 

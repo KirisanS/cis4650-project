@@ -96,6 +96,11 @@ class CM {
           SemanticAnalyzer semantic = new SemanticAnalyzer(false);
           result.accept(semantic, 0, false);
 
+          if (!semantic.valid) {
+              System.err.println("Semantic errors found. Code generation aborted.");
+              return;
+          }
+
           PrintStream outputFile = new PrintStream(new FileOutputStream(baseFile + ".tm"));
           System.setOut(outputFile);
 

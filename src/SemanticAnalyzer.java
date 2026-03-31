@@ -5,6 +5,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     NameTy currentFunctionReturnType;
     final static int SPACES = 4;
     boolean print;
+    public boolean valid = true;
 
     public SemanticAnalyzer(boolean print) {
         table = new SymbolTable(print);
@@ -39,7 +40,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
     private void checkMain(Dec last) {
         // int x; void main(void){} int y; -> BAD
         if (!(last instanceof FunctionDec)) {
-            System.err.println("Error: last declaration must be void main(void)");
+            semanticError("last declaration must be void main(void)");
             return;
         }
 
@@ -47,27 +48,44 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         // is function name main: void start(void){} -> BAD
         if (!f.func.equals("main")) {
-            System.err.println("Error: last declaration must be void main(void)");
+            semanticError("last declaration must be void main(void)");
             return;
         }
 
         // is return type void: int main(void){} -> BAD
         if (f.result.type != NameTy.VOID) {
-            System.err.println("Error: main must return void");
+            semanticError("main must return void");
         }
 
         // params must be void
         if (f.params != null) {
-            System.err.println("Error: main must have void parameters");
+            semanticError("main must have void parameters");
         }
     }
 
+    private void semanticError(String message) {
+        valid = false;
+        System.err.println("Error: " + message);    
+    }
+
     private void semanticError(int row, int col, String message) {
+        valid = false;
         System.err.println(
             "Error at line " + (row + 1) +
             ", col " + (col + 1) +
             ": " + message
         );
+    }
+
+    private ExpList reverseArgs(ExpList list) {
+        ExpList result = null;
+
+        while (list != null) {
+            result = new ExpList(list.head, result);
+            list = list.tail;
+        }
+
+        return result;
     }
 
     /* LISTS */ 
@@ -367,7 +385,7 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
         // check number of arguments and types of arguments
         VarDecList params = func.params;
-        ExpList args = exp.args;
+        ExpList args = reverseArgs(exp.args);  // args were reversed in parser
 
         // case where parameters and arguments both exist
         // args != nulll -> needed for situations such as add(3,4, x + y)
@@ -387,14 +405,34 @@ public class SemanticAnalyzer implements AbsynVisitor {
                 Dec paramDec = params.head;
                 Dec argDec = args.head.dtype;
 
-                // if argument is array
-                if (argDec instanceof ArrayDec) {
-                    if (!(paramDec instanceof ArrayDec)) {
-                        semanticError(exp.row, exp.col,
-                            "array argument passed to non-array parameter in call to '" + exp.func + "'");
+                boolean argIsArray = false;
+
+                // detect if argument is an array VARIABLE (not a[i])
+                if (args.head instanceof VarExp) {
+                    VarExp v = (VarExp) args.head;
+
+                    // only SimpleVar represents passing entire array (a)
+                    if (v.variable instanceof SimpleVar) {
+                        Dec actualDec = table.lookup(((SimpleVar)v.variable).name);
+                        argIsArray = actualDec instanceof ArrayDec;
                     }
-                } else {
-                    // normal type check
+                }
+
+                // parameter is array if declared as int a[]
+                boolean paramIsArray = paramDec instanceof ArrayDec;
+
+                // case 1: array passed to non-array parameter
+                if (argIsArray && !paramIsArray) {
+                    semanticError(exp.row, exp.col,
+                        "array argument passed to non-array parameter in call to '" + exp.func + "'");
+                }
+                // case 2: non-array passed to array parameter
+                else if (!argIsArray && paramIsArray) {
+                    semanticError(exp.row, exp.col,
+                        "non-array argument passed to array parameter in call to '" + exp.func + "'");
+                }
+                // case 3: both are same structure, check type
+                else {
                     int paramType = getType(paramDec);
                     int argType = getType(argDec);
 
