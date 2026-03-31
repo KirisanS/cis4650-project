@@ -378,11 +378,30 @@ public class SemanticAnalyzer implements AbsynVisitor {
             // x = add(y, 5); where y is undeclared
             if (params.head != null && args.head.dtype != null) {
 
-                int paramType = getType(params.head);
-                int argType = getType(args.head.dtype);
+                // int paramType = getType(params.head);
+                // int argType = getType(args.head.dtype);
 
-                if (paramType != argType) {
-                    semanticError(exp.row, exp.col,"argument type mismatch in call to '" + exp.func + "'");
+                // if (paramType != argType) {
+                //     semanticError(exp.row, exp.col,"argument type mismatch in call to '" + exp.func + "'");
+                // }
+                Dec paramDec = params.head;
+                Dec argDec = args.head.dtype;
+
+                // if argument is array
+                if (argDec instanceof ArrayDec) {
+                    if (!(paramDec instanceof ArrayDec)) {
+                        semanticError(exp.row, exp.col,
+                            "array argument passed to non-array parameter in call to '" + exp.func + "'");
+                    }
+                } else {
+                    // normal type check
+                    int paramType = getType(paramDec);
+                    int argType = getType(argDec);
+
+                    if (paramType != argType) {
+                        semanticError(exp.row, exp.col,
+                            "argument type mismatch in call to '" + exp.func + "'");
+                    }
                 }
             }
 

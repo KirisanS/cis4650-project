@@ -72,6 +72,7 @@ public class CodeGenerator implements AbsynVisitor {
 
         if(mainEntry == -1) {
             System.err.println("Error: Main Not Found, Exiting Code Generation");
+            return; // STOP codegen completely
         } else {
             emitComment("Finale");
             emitRM("ST", fp, globalOffset+ofpFO, fp, "push ofp");
@@ -218,7 +219,7 @@ public class CodeGenerator implements AbsynVisitor {
         emitComment("processing local var: " + exp.name);
         exp.offset = frameOffset;
         exp.nestLevel = currentNestLevel;
-        frameOffset -= exp.size + 1;
+        frameOffset -= exp.size;
     }
 
     public void visit(AssignExp exp, int level, boolean isAddr) {
@@ -247,6 +248,20 @@ public class CodeGenerator implements AbsynVisitor {
     public void visit(OpExp exp, int level, boolean isAddr) {
         emitComment("-> op");
 
+        // handle UMINUS first
+        if (exp.op == OpExp.UMINUS) {
+            if (exp.right != null) {
+                exp.right.accept(this, level, false);
+            }
+
+            emitRM("LDC", ac1, 0, 0, "load 0");
+            emitRO("SUB", ac, ac1, ac, "op uminus");
+
+            emitComment("<- op");
+            return;
+        }
+
+        // normal logic after
         if (exp.left != null) {
             exp.left.accept(this, level, false);
         }
@@ -321,16 +336,15 @@ public class CodeGenerator implements AbsynVisitor {
                 emitRM("LDA", pc, 1, pc, "unconditional jmp");
                 emitRM("LDC", ac, 1, 0,  "true case");
                 break;
-            case OpExp.UMINUS: 
-                // Do 0 - value to get negative value 
-                emitRM("LDC", ac1, 0, 0, "load uminus");
-                emitRO("SUB", ac, ac1, ac, "op uminus");
+            case OpExp.AND:
+                emitRO("MUL", ac, ac1, ac, "op &&");
                 break;
-            case OpExp.AND:         
-
-                break;
-            case OpExp.OR:          
-
+            case OpExp.OR:
+                emitRO("ADD", ac, ac1, ac, "op ||");
+                emitRM("JGT", ac, 2, pc, "br if true");
+                emitRM("LDC", ac, 0, 0, "false case");
+                emitRM("LDA", pc, 1, pc, "skip true");
+                emitRM("LDC", ac, 1, 0, "true case");
                 break;
         }
         emitComment("<- op");
@@ -361,9 +375,9 @@ public class CodeGenerator implements AbsynVisitor {
             emitComment("looking up id: " + var.name);
 
             VarDec dec = (VarDec) exp.dtype;
-            System.err.println("DEBUG: " + var.name + 
-                " offset=" + dec.offset + 
-                " nestLevel=" + dec.nestLevel);
+            // System.err.println("DEBUG: " + var.name + 
+            //     " offset=" + dec.offset + 
+            //     " nestLevel=" + dec.nestLevel);
 
             int offset  = dec.offset;
             int register = (dec.nestLevel == 0) ? gp : fp;

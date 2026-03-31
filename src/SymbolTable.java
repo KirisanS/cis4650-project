@@ -92,7 +92,7 @@ public class SymbolTable {
             for (NodeType node : list) {
                 if (node.level == currentLevel) {
                     indent(level);
-                    System.out.print(node.name + ": ");
+                    if (print) System.out.print(node.name + ": ");
                     printDecType(node.dec);
                 }
             }
@@ -102,7 +102,7 @@ public class SymbolTable {
     private void printDecType(Dec dec) {
         if (dec instanceof FunctionDec) {
             FunctionDec funDec = (FunctionDec) dec;
-            System.out.print("(");
+            if (print) System.out.print("(");
             VarDecList params = funDec.params;
 
             while (params != null) {
@@ -111,20 +111,20 @@ public class SymbolTable {
                 } else if (params.head instanceof ArrayDec) {
                     ArrayDec arr = (ArrayDec) params.head;
                     printType(arr.typ);
-                    System.out.print("[" + arr.size + "]");
+                    if (print) System.out.print("[" + arr.size + "]");
                 } 
                 if (params.tail != null) {
-                    System.out.print(", ");
+                    if (print) System.out.print(", ");
                 }
                 params = params.tail;
             }
-            System.out.print(") -> ");
+            if (print) System.out.print(") -> ");
             printType(((FunctionDec) dec).result);
         } else if (dec instanceof ArrayDec) {
             // printType(((ArrayDec) dec).typ);
             ArrayDec arr = (ArrayDec) dec;
             printType(arr.typ);
-            System.out.print("[" + arr.size + "]");
+            if (print) System.out.print("[" + arr.size + "]");
         } else if (dec instanceof SimpleDec) {
             printType(((SimpleDec) dec).typ);
         } else if (dec instanceof FunctionDec) {
@@ -138,16 +138,16 @@ public class SymbolTable {
 
         switch (type.type) {
             case NameTy.INTEGER: 
-                System.out.print("int");
+                if (print) System.out.print("int");
                 break;
             case NameTy.BOOLEAN: 
-                System.out.print("bool");
+                if (print) System.out.print("bool");
                 break;
             case NameTy.VOID: 
-                System.out.print("void");
+                if (print) System.out.print("void");
                 break;
             case NameTy.ERROR:
-                System.out.print("error");
+                if (print) System.out.print("error");
                 break;
         }
     }
