@@ -185,12 +185,12 @@ public class CodeGenerator implements AbsynVisitor {
 
         emitRM("ST", ac, refFO, fp, "save return address");
         frameOffset = initFO;
-
         currentNestLevel++;
 
-        if (exp.params != null) {
-            exp.params.accept(this, level, false); 
-        }
+        //very evil, breaks lots
+        // if (exp.params != null) {
+        //     exp.params.accept(this, level, false); 
+        // }
 
         if(exp.body != null) {
             exp.body.accept(this, level, false);
@@ -216,10 +216,15 @@ public class CodeGenerator implements AbsynVisitor {
     }
 
     public void visit(ArrayDec exp, int level, boolean isAddr) {
-        emitComment("processing local var: " + exp.name);
+        if (currentNestLevel == 0) {
+            emitComment("allocating global var: " + exp.name);
+            emitComment("<- vardecl");
+        } else {
+            emitComment("processing local var: " + exp.name);
+        }
         exp.offset = frameOffset;
         exp.nestLevel = currentNestLevel;
-        frameOffset -= exp.size;
+        frameOffset -= (exp.size == 0) ? 1 : exp.size;
     }
 
     public void visit(AssignExp exp, int level, boolean isAddr) {
@@ -382,11 +387,23 @@ public class CodeGenerator implements AbsynVisitor {
             int offset  = dec.offset;
             int register = (dec.nestLevel == 0) ? gp : fp;
 
+            boolean isParam = (dec instanceof ArrayDec && ((ArrayDec)dec).size == 0);
+
+            if (isParam) {
+                emitRM("LD", ac, offset, register, "load id value");
+            } else {
+                emitRM("LDA", ac, offset, register, "load id address");
+            }
+
+            int savedOffset = frameOffset;
+            frameOffset--;
+            emitRM("ST", ac, savedOffset, fp, "store array addr");
+
             var.index.accept(this, level, false);
 
-            emitRM("LDA", ac1, offset, register, "load array address");
-            emitRO("ADD", ac, ac1, ac, "compute element address");
-
+            emitRM("LD", ac1, savedOffset, fp, "load array base addr");
+            emitRO("SUB", ac, ac1, ac, "base is at top of array");
+            frameOffset++;
             if (!isAddr) {
                 emitRM("LD", ac, 0, ac, "load element value");
             }
@@ -519,36 +536,30 @@ public class CodeGenerator implements AbsynVisitor {
         int savedOffset = frameOffset;
 
         if (exp.args != null) {
+            // reverse args back to declaration order
+            ExpList reversed = null;
             ExpList arguments = exp.args;
-            int argOffset = frameOffset + initFO;
-
-            // Go through each argument and add them to stack
             while (arguments != null) {
-                if (arguments.head != null) {
-                    
-                    if (arguments.head instanceof VarExp) {
-                        VarExp vexp = (VarExp) arguments.head;
-                        if (vexp.variable instanceof SimpleVar && 
-                            vexp.dtype instanceof ArrayDec) {
-                            
-                            vexp.accept(this, level, true);
-                        } else {
-                            arguments.head.accept(this, level, false);
-                        }
-                    } else {
-                        arguments.head.accept(this, level, false);
-                    }
+                reversed = new ExpList(arguments.head, reversed);
+                arguments = arguments.tail;
+            }
+
+            int argOffset = frameOffset + initFO;
+            while (reversed != null) {
+                if (reversed.head != null) {
+                    boolean isArrayArg = (reversed.head instanceof VarExp &&
+                        ((VarExp)reversed.head).variable instanceof SimpleVar &&
+                        ((VarExp)reversed.head).dtype instanceof ArrayDec);
+                    reversed.head.accept(this, level, isArrayArg);
                     emitRM("ST", ac, argOffset, fp, "store arg val");
                     argOffset--;
                 }
-                arguments = arguments.tail;
+                reversed = reversed.tail;
             }
         }
 
         emitRM("ST", fp, frameOffset + ofpFO, fp, "push ofp");
         emitRM("LDA", fp, frameOffset, fp, "push frame");
-
-        // Load the address of where we will return to after the jump 
         emitRM("LDA", ac, 1, pc, "load ac with return pointer");
 
         if(exp.func.equals("input")) {
@@ -556,14 +567,11 @@ public class CodeGenerator implements AbsynVisitor {
         } else if (exp.func.equals("output")) {
             emitRM_Abs("LDA", pc, outputEntry, "jump to output loc");
         } else {
-            // remove the cast line (gone now) because it's wrong
             emitRM_Abs("LDA", pc, func.functionEntry, "jump to func loc");
         }
 
         emitRM("LD", fp, ofpFO, fp, "pop frame");
-
         frameOffset = savedOffset;
-
         emitComment("<- call");
     }
     public void visit(NilExp exp, int level, boolean isAddr) { 
