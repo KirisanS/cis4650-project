@@ -171,6 +171,8 @@ public class CodeGenerator implements AbsynVisitor {
     /* Declarations */ 
 
     public void visit(FunctionDec exp, int level, boolean isAddr) {
+
+        int savedOffset = frameOffset;
         
         emitComment("process function: " + exp.func);
         emitComment("jump around function body here");
@@ -187,10 +189,9 @@ public class CodeGenerator implements AbsynVisitor {
         frameOffset = initFO;
         currentNestLevel++;
 
-        //very evil, breaks lots
-        // if (exp.params != null) {
-        //     exp.params.accept(this, level, false); 
-        // }
+        if (exp.params != null) {
+            exp.params.accept(this, level, false); 
+        }
 
         if(exp.body != null) {
             exp.body.accept(this, level, false);
@@ -205,10 +206,12 @@ public class CodeGenerator implements AbsynVisitor {
         emitRM_Abs("LDA", pc, savedLoc2, "jump around fn body");
         emitRestore();
 
+        frameOffset = savedOffset;
         emitComment("<- function declaration");
     }
 
     public void visit(SimpleDec exp, int level, boolean isAddr) {
+
         emitComment("processing local var: " + exp.name);
         exp.offset = frameOffset;
         exp.nestLevel = currentNestLevel;
@@ -401,9 +404,15 @@ public class CodeGenerator implements AbsynVisitor {
 
             var.index.accept(this, level, false);
 
+            emitRM("JLT", ac, 1, pc, "halt if subscript < 0");
+            emitRM("LDA", pc, 1, pc, "absolute jump if not");
+            emitRO("HALT", 0, 0, 0, "halt if subscript < 0");
+
             emitRM("LD", ac1, savedOffset, fp, "load array base addr");
+            // SUB? ADD? IDK 
             emitRO("SUB", ac, ac1, ac, "base is at top of array");
             frameOffset++;
+
             if (!isAddr) {
                 emitRM("LD", ac, 0, ac, "load element value");
             }
@@ -425,14 +434,14 @@ public class CodeGenerator implements AbsynVisitor {
 
     public void visit(CompoundExp exp, int level, boolean isAddr) {
         emitComment("-> compound statement");
-        int savedFrameOffset = frameOffset;
+        //int savedFrameOffset = frameOffset;
         if (exp.decs != null) {
             exp.decs.accept(this, level, false);
         } if (exp.exps != null) {
             exp.exps.accept(this, level, false);
         }
         emitComment("<- compound statement");
-        frameOffset = savedFrameOffset;
+        //frameOffset = savedFrameOffset;
     }
 
     public void visit(IfExp exp, int level, boolean isAddr) { 
@@ -446,7 +455,32 @@ public class CodeGenerator implements AbsynVisitor {
         // Save the location of where we might skip to if conditional is false
         int savedLoc = emitSkip(1);
 
-        exp.thenpart.accept(this, level, false);
+        if(exp.thenpart != null) {
+            exp.thenpart.accept(this, level, false);
+        }
+
+        // int savedLoc2 = -1;
+        // if (exp.elsepart != null && !(exp.elsepart instanceof NilExp)) {
+        //     savedLoc2 = emitSkip(1);
+        // }
+
+        // int elseLoc = emitLoc;
+
+        // emitBackup(savedLoc);
+        // emitRM_Abs("JEQ", ac, elseLoc, "if: jump to else");
+        // emitRestore();
+
+        // if (exp.elsepart != null & !(exp.elsepart instanceof NilExp)) {
+        //     exp.elsepart.accept(this, level, false);
+        // }
+
+        // if (savedLoc2 != -1) {
+        //     int afterIfLoc = emitLoc;
+        //     emitBackup(savedLoc2);
+        //     emitRM_Abs("LDA", pc, afterIfLoc, "if: jump to end");
+        //     emitRestore();
+        // }
+
 
         if(exp.elsepart != null && !(exp.elsepart instanceof NilExp)) {
 
@@ -473,9 +507,13 @@ public class CodeGenerator implements AbsynVisitor {
             emitBackup(savedLoc);
             emitRM_Abs("JEQ", ac, afterIfLoc, "jump to end of if block");
             emitRestore();
+
+            emitRM("LDA", pc, 0, pc, "jump to end");
         }
 
+        emitComment("<- if");
     }
+
     public void visit(WhileExp exp, int level, boolean isAddr) { 
         
         emitComment("-> while");
@@ -547,10 +585,19 @@ public class CodeGenerator implements AbsynVisitor {
             int argOffset = frameOffset + initFO;
             while (reversed != null) {
                 if (reversed.head != null) {
-                    boolean isArrayArg = (reversed.head instanceof VarExp &&
-                        ((VarExp)reversed.head).variable instanceof SimpleVar &&
-                        ((VarExp)reversed.head).dtype instanceof ArrayDec);
-                    reversed.head.accept(this, level, isArrayArg);
+                    boolean isArrayArgument = false;
+                    boolean isParamArgument = false;
+
+                    if(reversed.head instanceof VarExp) {
+                        VarExp v = (VarExp) reversed.head;
+
+                        if(v.variable instanceof SimpleVar && v.dtype instanceof ArrayDec) {
+                            isArrayArgument = true;
+                            isParamArgument = ((ArrayDec) v.dtype).size == 0;
+                        }
+                    }
+
+                    reversed.head.accept(this, level, isArrayArgument && !isParamArgument);
                     emitRM("ST", ac, argOffset, fp, "store arg val");
                     argOffset--;
                 }
