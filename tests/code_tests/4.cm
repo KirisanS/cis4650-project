@@ -1,0 +1,13 @@
+/* 
+Test 4: Assignment Error
+- Tests:
+  1. assigning an array to an int
+- Expected: 1 semantic error
+*/
+
+void main(void) {
+  int abgs[3];
+  int abb;
+
+  abb = abgs;   /* ERROR: whole group used as a value */
+}

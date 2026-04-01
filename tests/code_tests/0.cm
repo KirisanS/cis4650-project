@@ -1,0 +1,34 @@
+/* 
+Test 0: Vector Dot Product
+- Computes dot product of two vectors
+- Tests arrays, loops, function calls, and arithmetic
+- No errors expected
+*/
+
+int dot(int a[], int b[], int n) {
+  int i;
+  int sum;
+
+  i = 0;
+  sum = 0;
+
+  while (i < n) {
+    sum = sum + a[i] * b[i];
+    i = i + 1;
+  }
+
+  return sum;
+}
+
+void main(void) {
+  int a[3];
+  int b[3];
+  int result;
+
+  a[0] = 1; a[1] = 2; a[2] = 3;
+  b[0] = 4; b[1] = 5; b[2] = 6;
+
+  result = dot(a, b, 3);
+
+  output(result);   /* expected: 32 */
+}

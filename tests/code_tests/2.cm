@@ -1,0 +1,22 @@
+/* 
+Test 2: Nested Matcha Orders
+- Builds a drink using nested recipe steps
+- Tests nested function calls and frameOffset handling
+- No errors expected
+*/
+
+int addIngredient(int base, int extra) {
+  return base + extra;
+}
+
+int makeDrink(int matcha, int milk) {
+  return addIngredient(matcha * 2, milk);
+}
+
+void main(void) {
+  int drinkStrength;
+
+  drinkStrength = makeDrink(2, addIngredient(1, 2));
+
+  output(drinkStrength);
+}

@@ -1,0 +1,21 @@
+/* 
+Test 7: If Condition Type Error
+- Tests that if condition must be int or boolean
+- Expected: 1 semantic error
+*/
+
+void main(void) {
+  int x;
+  int y;
+
+  x = 5;
+  y = 10;
+
+  if (x + y) {   /* OK actually (int allowed) */
+    output(1);
+  }
+
+  if (output(x)) {   /* ERROR: if must eval to int or bool */
+    output(2);
+  }
+}

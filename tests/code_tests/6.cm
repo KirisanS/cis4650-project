@@ -1,0 +1,19 @@
+/* 
+Test 6: While and Return Errors
+- Tests:
+  1. invalid while condition type
+  2. return type mismatch
+- Expected: 2 semantic errors
+*/
+
+int f(void) {
+  return;   /* ERROR: missing return value */
+}
+
+void main(void) {
+  int x;
+
+  while (output(x)) {   /* ERROR: output is void */
+    x = x + 1;
+  }
+}

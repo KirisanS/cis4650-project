@@ -1,0 +1,19 @@
+/* 
+Test 1: Matcha Shop
+- Simulates ordering a matcha drink with toppings
+- Tests arithmetic and I/O
+- No errors expected
+*/
+
+void main(void) {
+  int matchaShots;
+  int pearls;
+  int totalCost;
+
+  matchaShots = input();   /* number of matcha shots */
+  pearls = input();        /* number of toppings */
+
+  totalCost = matchaShots * 3 + pearls * 2;
+
+  output(totalCost);
+}

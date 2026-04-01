@@ -1,0 +1,18 @@
+/* 
+Test 5: Function Argument Mismatch
+- Tests:
+  1. array passed to non-array parameter
+  2. wrong number of arguments
+- Expected: 2 semantic errors
+*/
+
+int f(int a, int b) {
+  return a + b;
+}
+
+void main(void) {
+  int arr[2];
+
+  f(arr);   /* ERROR 1: wrong number of args */
+            /* ERROR 2: array passed to int */
+}

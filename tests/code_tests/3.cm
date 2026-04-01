@@ -1,0 +1,30 @@
+/* 
+Test 3: Sum of three numbers
+- Tests arrays, loops, and function calls
+- No errors expected
+*/
+
+int totalScore(int ratings[], int count) {
+  int i;
+  int sum;
+
+  i = 0;
+  sum = 0;
+
+  while (i < count) {
+    sum = sum + ratings[i];
+    i = i + 1;
+  }
+
+  return sum;
+}
+
+void main(void) {
+  int nums[3];
+
+  nums[0] = input();
+  nums[1] = input();
+  nums[2] = input();
+
+  output(totalScore(nums, 3));
+}

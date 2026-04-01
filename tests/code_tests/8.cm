@@ -1,0 +1,15 @@
+/* 
+Test 8: Runtime Array Bounds Error
+- Tests runtime error handling for array bounds
+- Expected: runtime error (-2000000 printed and HALT)
+*/
+
+void main(void) {
+  int arr[3];
+
+  arr[0] = 1;
+  arr[1] = 2;
+  arr[2] = 3;
+
+  output(arr[3]);   /* runtime error */
+}

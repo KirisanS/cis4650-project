@@ -1,0 +1,31 @@
+/* 
+Test 9: Mixed Semantic and Runtime Errors
+- Tests:
+  1. array misuse
+  2. argument mismatch
+  3. runtime out-of-bounds
+- Expected: 3 semantic errors
+  - Runtime error array out of bounds does not occur because
+    code is not semantically correct
+*/
+
+int f(int a, int b) {
+  return a + b;
+}
+
+int g(int arr[], int n) {
+  return n;
+}
+
+void main(void) {
+  int arr[3];
+  int x;
+
+  x = arr;        /* ERROR */
+
+  f(arr, x);      /* ERROR */
+
+  g(x, 3);        /* ERROR */
+
+  output(arr[5]); /* runtime error */
+}
