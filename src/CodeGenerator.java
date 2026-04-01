@@ -407,9 +407,6 @@ public class CodeGenerator implements AbsynVisitor {
             emitComment("looking up id: " + var.name);
 
             VarDec dec = (VarDec) exp.dtype;
-            // System.err.println("DEBUG: " + var.name + 
-            //     " offset=" + dec.offset + 
-            //     " nestLevel=" + dec.nestLevel);
 
             int offset  = dec.offset;
             int register = (dec.nestLevel == 0) ? gp : fp;
@@ -501,29 +498,6 @@ public class CodeGenerator implements AbsynVisitor {
         if(exp.thenpart != null) {
             exp.thenpart.accept(this, level, false);
         }
-
-        // int savedLoc2 = -1;
-        // if (exp.elsepart != null && !(exp.elsepart instanceof NilExp)) {
-        //     savedLoc2 = emitSkip(1);
-        // }
-
-        // int elseLoc = emitLoc;
-
-        // emitBackup(savedLoc);
-        // emitRM_Abs("JEQ", ac, elseLoc, "if: jump to else");
-        // emitRestore();
-
-        // if (exp.elsepart != null & !(exp.elsepart instanceof NilExp)) {
-        //     exp.elsepart.accept(this, level, false);
-        // }
-
-        // if (savedLoc2 != -1) {
-        //     int afterIfLoc = emitLoc;
-        //     emitBackup(savedLoc2);
-        //     emitRM_Abs("LDA", pc, afterIfLoc, "if: jump to end");
-        //     emitRestore();
-        // }
-
 
         if(exp.elsepart != null && !(exp.elsepart instanceof NilExp)) {
 
