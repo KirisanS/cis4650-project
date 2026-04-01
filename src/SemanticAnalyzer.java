@@ -192,13 +192,14 @@ public class SemanticAnalyzer implements AbsynVisitor {
 
     /* Expression */
     public void visit(VarExp exp, int level, boolean isAddr) {
-        //indent(level);
 
         String name = null;
-
-        // var can be SimpleVar or IndexVar so cast accordingly
         if (exp.variable instanceof IndexVar) {
-            name = ((IndexVar) exp.variable).name;
+            IndexVar iv = (IndexVar) exp.variable;
+            name = iv.name;
+            if (iv.index != null) {
+                iv.index.accept(this, level, false);
+            }
         } else if (exp.variable instanceof SimpleVar) {
             name = ((SimpleVar) exp.variable).name;
         } 
