@@ -24,7 +24,10 @@ public class CodeGenerator implements AbsynVisitor {
     int ac = 0;
     int ac1 = 1;
 
-    // stub
+    // Prototype Fix Stuff
+    private java.util.Map<String, Integer> functionAddressMap = new java.util.HashMap<>();
+    private java.util.List<Object[]> deferredFunctionCalls = new java.util.ArrayList<>();
+
 
     public CodeGenerator(String fileName) {
         this.fileName = fileName;
@@ -67,6 +70,15 @@ public class CodeGenerator implements AbsynVisitor {
 
         // Enter Code Generation
         ((DecList) trees).accept(this, 0, false);
+
+        for (Object[] deferred : deferredFunctionCalls) {
+            int callLoc = (Integer) deferred[0];
+            String funcName = (String) deferred[1];
+            int funcAddr = functionAddressMap.get(funcName);
+            emitBackup(callLoc);
+            emitRM_Abs("LDA", pc, funcAddr, "jump to func loc");
+            emitRestore();
+        }
 
         // Generate Finale Later 
 
@@ -172,6 +184,10 @@ public class CodeGenerator implements AbsynVisitor {
 
     public void visit(FunctionDec exp, int level, boolean isAddr) {
 
+        if (exp.body instanceof NilExp) {
+            return;
+        }
+
         int savedOffset = frameOffset;
         
         emitComment("process function: " + exp.func);
@@ -179,6 +195,8 @@ public class CodeGenerator implements AbsynVisitor {
 
         int savedLoc = emitSkip(1);
         exp.functionEntry = emitLoc;
+
+        functionAddressMap.put(exp.func, emitLoc);
 
         if(exp.func.equals("main")) {
             mainEntry = emitLoc;
@@ -225,9 +243,15 @@ public class CodeGenerator implements AbsynVisitor {
         } else {
             emitComment("processing local var: " + exp.name);
         }
-        exp.offset = frameOffset;
-        exp.nestLevel = currentNestLevel;
-        frameOffset -= (exp.size == 0) ? 1 : exp.size;
+        if (exp.size == 0) {
+            exp.offset = frameOffset;
+            exp.nestLevel = currentNestLevel;
+            frameOffset -= 2;
+        } else {
+            exp.offset = frameOffset;
+            exp.nestLevel = currentNestLevel;
+            frameOffset -= exp.size;
+        }
     }
 
     public void visit(AssignExp exp, int level, boolean isAddr) {
@@ -404,14 +428,33 @@ public class CodeGenerator implements AbsynVisitor {
 
             var.index.accept(this, level, false);
 
-            emitRM("JLT", ac, 1, pc, "halt if subscript < 0");
-            emitRM("LDA", pc, 1, pc, "absolute jump if not");
-            emitRO("HALT", 0, 0, 0, "halt if subscript < 0");
+            int indexOffset = frameOffset;
+            frameOffset--;
+            emitRM("ST", ac, indexOffset, fp, "store index");
 
+            emitRM("JLT", ac, 1, pc, "skip if index < 0");
+            emitRM("LDA", pc, 3, pc, "index ok, jump over error");
+            emitRM("LDC", ac, -1000000, 0, "error: out of range below");
+            emitRO("OUT", ac, 0, 0, "print error");
+            emitRO("HALT", 0, 0, 0, "halt: index out of range below");
+
+            if (isParam) {
+                emitRM("LD", ac1, offset - 1, register, "load param array size");
+            } else {
+                emitRM("LDC", ac1, ((ArrayDec)dec).size, 0, "load array size");
+            }
+
+            emitRM("LD", ac, indexOffset, fp, "reload index");
+            emitRO("SUB", ac, ac, ac1, "index - size");
+            emitRM("JLT", ac, 3, pc, "skip if index < size");
+            emitRM("LDC", ac, -2000000, 0, "error: out of range above");
+            emitRO("OUT", ac, 0, 0, "print error");
+            emitRO("HALT", 0, 0, 0, "halt: index out of range above");
+
+            emitRM("LD", ac, indexOffset, fp, "reload index");
             emitRM("LD", ac1, savedOffset, fp, "load array base addr");
-            // SUB? ADD? IDK 
             emitRO("SUB", ac, ac1, ac, "base is at top of array");
-            frameOffset++;
+            frameOffset += 2;
 
             if (!isAddr) {
                 emitRM("LD", ac, 0, ac, "load element value");
@@ -434,14 +477,14 @@ public class CodeGenerator implements AbsynVisitor {
 
     public void visit(CompoundExp exp, int level, boolean isAddr) {
         emitComment("-> compound statement");
-        //int savedFrameOffset = frameOffset;
+        int savedFrameOffset = frameOffset;
         if (exp.decs != null) {
             exp.decs.accept(this, level, false);
         } if (exp.exps != null) {
             exp.exps.accept(this, level, false);
         }
         emitComment("<- compound statement");
-        //frameOffset = savedFrameOffset;
+        frameOffset = savedFrameOffset;
     }
 
     public void visit(IfExp exp, int level, boolean isAddr) { 
@@ -600,6 +643,21 @@ public class CodeGenerator implements AbsynVisitor {
                     reversed.head.accept(this, level, isArrayArgument && !isParamArgument);
                     emitRM("ST", ac, argOffset, fp, "store arg val");
                     argOffset--;
+
+                    if (isArrayArgument) {
+                        if (isParamArgument) {
+                            VarExp v = (VarExp) reversed.head;
+                            VarDec paramDec = (VarDec) v.dtype;
+                            int reg = (paramDec.nestLevel == 0) ? gp : fp;
+                            emitRM("LD", ac, paramDec.offset - 1, reg, "load param array size");
+                        } else {
+                            VarExp v = (VarExp) reversed.head;
+                            ArrayDec arrDec = (ArrayDec) v.dtype;
+                            emitRM("LDC", ac, arrDec.size, 0, "load real array size");
+                        }
+                        emitRM("ST", ac, argOffset, fp, "store array size");
+                        argOffset--;
+                    }
                 }
                 reversed = reversed.tail;
             }
@@ -614,7 +672,8 @@ public class CodeGenerator implements AbsynVisitor {
         } else if (exp.func.equals("output")) {
             emitRM_Abs("LDA", pc, outputEntry, "jump to output loc");
         } else {
-            emitRM_Abs("LDA", pc, func.functionEntry, "jump to func loc");
+            int callLoc = emitSkip(1);
+            deferredFunctionCalls.add(new Object[]{callLoc, exp.func});
         }
 
         emitRM("LD", fp, ofpFO, fp, "pop frame");

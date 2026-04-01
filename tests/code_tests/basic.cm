@@ -1,5 +1,7 @@
-int x;
 void main(void) {
-  x = 5;
-  output(x);
+    int a[5];
+    a[0] = 1;
+    a[4] = 99;
+    output(a[0]);
+    output(a[4]);
 }
