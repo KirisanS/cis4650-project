@@ -95,12 +95,12 @@ The repository includes ten C- test programs located in `tests/code_tests/`:
 
 1. 1.cm – valid program (generates correct TM code and executes successfully)
 2. 2.cm – valid program (moderate complexity)
-3. 3.cm – valid program (more complex features such as control flow or function calls)
+3. 3.cm – valid program (more complex features)
 
-4. 4.cm – program with syntactic errors
-5. 5.cm – program with semantic errors
+4. 4.cm – program with semantic errors
+5. 5.cm – program with syntax errors
 6. 6.cm – program with semantic errors
-7. 7.cm – program with runtime errors (e.g., invalid operations)
+7. 7.cm – program with semantic errors
 8. 8.cm – program with runtime errors (e.g., array bounds)
 
 9. 9.cm – stress test (complex or mixed errors)
