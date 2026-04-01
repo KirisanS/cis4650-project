@@ -1,7 +1,7 @@
 /* 
 Test 4: Assignment Error
 - Tests:
-  1. assigning an array to an int
+  1. assigning an array to an int without indexing the array
 - Expected: 1 semantic error
 */
 

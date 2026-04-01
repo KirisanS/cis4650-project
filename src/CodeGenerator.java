@@ -582,13 +582,10 @@ public class CodeGenerator implements AbsynVisitor {
 
         emitComment("-> call of function: " + exp.func);
 
-        // fix for casting problem
         FunctionDec func = exp.funcDec;
 
-        // fix for nested calls
-        // callexp shouldnt change frameoffset permanently
-        // ie., allows output(add(2, add(3,4))); to happen properly
-        int savedOffset = frameOffset;
+        // Save the current frame location for THIS call
+        int savedFrameOffset = frameOffset;
 
         if (exp.args != null) {
             // reverse args back to declaration order
@@ -599,7 +596,8 @@ public class CodeGenerator implements AbsynVisitor {
                 arguments = arguments.tail;
             }
 
-            int argOffset = frameOffset + initFO;
+            // Evaluate each argument and store at calculated positions
+            int argOffset = savedFrameOffset + initFO;
             while (reversed != null) {
                 if (reversed.head != null) {
                     boolean isArrayArgument = false;
@@ -614,11 +612,17 @@ public class CodeGenerator implements AbsynVisitor {
                         }
                     }
 
+                    // Allocate space for this argument's storage BEFORE evaluation
+                    // This moves frameOffset down so nested calls don't overlap
+                    int argStorageOffset = argOffset;
+                    frameOffset = argOffset - 1;  // Reserve space below this arg
+                    
                     reversed.head.accept(this, level, isArrayArgument && !isParamArgument);
-                    emitRM("ST", ac, argOffset, fp, "store arg val");
+                    emitRM("ST", ac, argStorageOffset, fp, "store arg val");
                     argOffset--;
 
                     if (isArrayArgument) {
+                        frameOffset--;  // Reserve space for array size too
                         if (isParamArgument) {
                             VarExp v = (VarExp) reversed.head;
                             VarDec paramDec = (VarDec) v.dtype;
@@ -637,8 +641,9 @@ public class CodeGenerator implements AbsynVisitor {
             }
         }
 
-        emitRM("ST", fp, frameOffset + ofpFO, fp, "push ofp");
-        emitRM("LDA", fp, frameOffset, fp, "push frame");
+        // Use savedFrameOffset for the frame push
+        emitRM("ST", fp, savedFrameOffset + ofpFO, fp, "push ofp");
+        emitRM("LDA", fp, savedFrameOffset, fp, "push frame");
         emitRM("LDA", ac, 1, pc, "load ac with return pointer");
 
         if(exp.func.equals("input")) {
@@ -651,7 +656,6 @@ public class CodeGenerator implements AbsynVisitor {
         }
 
         emitRM("LD", fp, ofpFO, fp, "pop frame");
-        frameOffset = savedOffset;
         emitComment("<- call");
     }
     public void visit(NilExp exp, int level, boolean isAddr) { 

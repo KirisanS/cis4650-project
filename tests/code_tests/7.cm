@@ -1,6 +1,7 @@
 /* 
 Test 7: If Condition Type Error
-- Tests that if condition must be int or boolean
+- Tests:
+  1. if condition must be int or boolean
 - Expected: 1 semantic error
 */
 

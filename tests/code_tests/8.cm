@@ -1,6 +1,7 @@
 /* 
 Test 8: Runtime Array Bounds Error
-- Tests runtime error handling for array bounds
+- Tests:
+  1. runtime error handling for array bounds
 - Expected: runtime error (-2000000 printed and HALT)
 */
 

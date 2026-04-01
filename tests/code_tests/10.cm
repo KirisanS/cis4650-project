@@ -1,0 +1,66 @@
+/* 10.cm: Matrix multiplication */
+int a[4];
+int b[4];
+int c[4];
+
+void rowDotCol(int row[], int col[], int out[], int idx) {
+  out[idx] = row[0] * col[0] + row[1] * col[2];
+}
+
+void extractCol(int mat[], int col[], int which) {
+  col[0] = mat[which];
+  col[2] = mat[which + 2];
+}
+
+void multiply(int x[], int y[], int z[]) {
+  int col[4];
+  int idx;
+  int which;
+
+  /* z[0] = x row0 dot y col0 */
+  which = 0;
+  extractCol(y, col, which);
+  idx = 0;
+  rowDotCol(x, col, z, idx);
+
+  /* z[1] = x row0 dot y col1 */
+  which = 1;
+  extractCol(y, col, which);
+  idx = 1;
+  rowDotCol(x, col, z, idx);
+
+  /* z[2] = x row1 dot y col0 */
+  which = 0;
+  extractCol(y, col, which);
+  idx = 2;
+  /* shift row pointer by 2 for row1 */
+  z[2] = x[2] * col[0] + x[3] * col[2];
+
+  /* z[3] = x row1 dot y col1 */
+  which = 1;
+  extractCol(y, col, which);
+  z[3] = x[2] * col[0] + x[3] * col[2];
+}
+
+void main(void) {
+  int i;
+
+  /* a = [ [1,2],     b = [ [5,6], 
+           [3,4] ]          [7,8] ] */
+  a[0] = 1;  a[1] = 2; 
+  a[2] = 3;  a[3] = 4;
+
+  b[0] = 5;  b[1] = 6;
+  b[2] = 7;  b[3] = 8;
+
+  /* a cross b = c */
+  multiply(a, b, c);
+
+  i = 0;
+  /* expected = [ [19, 22]
+                  [43, 50] ] */
+  while (i < 4) {
+    output(c[i]);
+    i = i + 1;
+  }
+}
